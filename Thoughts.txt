@@ -1,5 +1,9 @@
 Effect stack?
-Step1: Determine which effects still work - in order of addition
+Step 1: Determine which effects still work - in order of addition
 Note: effects are not destroyed by effects, though may be prevented from being applied
-Effects that affect other effects have EFFECT_SCOPE tag
+Effects that affect other effects have SCOPE_EFFECT tag
+Step 2: Apply effects in loop, from older to newer, until no new effects can be applied
+
+How do I check for conditions?
+
 
