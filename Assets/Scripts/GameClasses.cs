@@ -18,6 +18,7 @@ public class SingleGame
 
 // "variable" names
 	public const string ownID="ownerID";
+	public const string _count="_count";
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
@@ -88,6 +89,10 @@ public class SingleGame
 			STRING,
 			COMPOUND_ANY,//for Lists
 			COMPOUND_ALL,
+			COMPOUND_COUNT,
+			///For and/or
+			MULTI_AND,
+			MULTI_OR,
 			/// for numerical
 			EQUAL, //val==cnd.val
 			LESS, //val<cnd.val
@@ -100,17 +105,21 @@ public class SingleGame
 		//public Type type_compound;//type to use for compound conditions
 		public string variable; //variable name to compare OR tag
 		//public string variable_compound;
-		public object value;//value to compare to
+		public object [] values;//value(s) to compare to
 		public Condition()
 		{
 			inverse=false;
 		}
-		public Condition(Type t, string var, object val)
+		public Condition(Type t, string var, params object [] val)
 		{
 			inverse=false;
 			type=t;
 			variable=var;
-			value=val;
+			values=new object [val.Length];
+			for(int i=0;i<val.Length;i++)
+			{
+				values[i]=val[i];
+			}
 
 		}
 		public bool isFulfilled(Conditional cnd)
@@ -125,16 +134,19 @@ public class SingleGame
 				return cnd.hasTag(variable);
 			if(type==Type.STRING)
 			{
+				if(values.Length<1) return false;
 				string val2=cnd[variable] as string;
 				if(val2==null) return false;
-				return (val2==(value as string));
+				return (val2==(values[0] as string));
 			}
-			if(type==Type.COMPOUND_ALL||type==Type.COMPOUND_ANY) //compounds! EW
+			if(type==Type.COMPOUND_ALL||type==Type.COMPOUND_ANY||type==Type.COMPOUND_COUNT) //compounds! EW
 			{
-				Condition compcond=value as Condition;
+				if(values.Length<1) return false;
+				if(values.Length<2&&type==Type.COMPOUND_COUNT) return false;
+				Condition compcond=values[0] as Condition;
 				if(compcond==null) {
 					#if THING
-					Debug.Log(string.Format("Invalid value for compound condition : {0}",value));
+					Debug.Log(string.Format("Invalid value for compound condition : {0}",values[0]));
 					#endif
 					return false;
 				}
@@ -142,19 +154,64 @@ public class SingleGame
 				if(!(cval is IList)) return false;
 				List<Conditional> ccnds=cval as List<Conditional>;
 				if(ccnds==null) return false;
+				int cnt=0;
 				foreach(Conditional cn in ccnds)
 				{
 					bool res=compcond.isFulfilled(cn);
 					if(type==Type.COMPOUND_ALL&&!res) return false;
 					if(type==Type.COMPOUND_ANY&&res) return true;
+					if(type==Type.COMPOUND_COUNT&&res) cnt=cnt+1;
 				}
 				if(type==Type.COMPOUND_ALL) return true;
-				else
+				if(type==Type.COMPOUND_ANY)
 					return false;
+				if(type==Type.COMPOUND_COUNT)
+				{
+					Condition cnd2=values[1] as Condition;
+					if(cnd2==null) return false;
+					Conditional temp=new Conditional();
+					temp[_count]=cnt;
+					return cnd2.isFulfilled(temp);
+				}
 
 			}
-			// no good way to compare values, I guess...
+			if(type==Type.MULTI_AND)
+			{
+				bool ok=true;
+				foreach(object obj in values)
+				{
+					Condition tcnd=obj as Condition;
+					if(tcnd==null)
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid value for multi_and condition : {0}",obj));
+						#endif
+						return false;
+					}
+					if(!tcnd.isFulfilled(cnd)){ok=false;break;}
+				}
+				return ok;
+			}
+			if(type==Type.MULTI_OR)
+			{
+				bool ok=false;
+				foreach(object obj in values)
+				{
+					Condition tcnd=obj as Condition;
+					if(tcnd==null)
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid value for multi_or condition : {0}",obj));
+						#endif
+						return false;
+					}
+					if(tcnd.isFulfilled(cnd)){ok=true;break;}
+				}
+				return ok;
+			}
 
+			// no good way to compare values, I guess...
+			if(values.Length<1) return false;
 			object val=cnd[variable];
 			int cmp=0;
 			if(val==null) return false;
@@ -166,12 +223,12 @@ public class SingleGame
 			case System.TypeCode.Int32:
 			case System.TypeCode.Int64:
 			{
-				System.Int64 cndval=System.Convert.ToInt64(value);
+				System.Int64 cndval=System.Convert.ToInt64(values[0]);
 				System.Int64 cmpval=System.Convert.ToInt64(val);
 				cmp=cmpval.CompareTo(cndval);
 			};break;
 			default:{
-				System.Double cndval=System.Convert.ToDouble(value);
+				System.Double cndval=System.Convert.ToDouble(values[0]);
 				System.Double cmpval=System.Convert.ToDouble(val);
 				cmp=cmpval.CompareTo(cndval);
 
