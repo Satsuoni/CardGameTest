@@ -9,6 +9,7 @@ public class SingleGame
 //Scope tags
 	public const string SCOPE_EFFECT="SCOPE_EFFECT";
 	public const string SCOPE_TIMELINE="SCOPE_TIMELINE";
+	public const string SCOPE_HAND="SCOPE_HAND";
 //elements
 	public const string ELEMENT_PHYSICAL="ELEMENT_PHYSICAL";
 	public const string ELEMENT_DARK="ELEMENT_DARK";
@@ -19,6 +20,7 @@ public class SingleGame
 // "variable" names
 	public const string ownID="ownerID";
 	public const string _count="_count";
+	public const string _delay="_delay"; //timeline delay for Event
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
@@ -28,6 +30,46 @@ public class SingleGame
 	{
 		protected Dictionary<string,object> _values;
 		protected HashSet<string> _tags;
+		public virtual Conditional duplicate()
+		{
+			Conditional ret=new Conditional();
+			foreach(string tag in _tags)
+				ret.setTag(tag);
+			foreach(KeyValuePair<string,object> keyp in _values)
+			{
+				string key=keyp.Key;
+				object obj=keyp.Value;
+				if(obj is Conditional)
+				{
+					ret._values[key]=(obj as Conditional).duplicate();
+					continue;
+				}
+				if(obj is List<Conditional>)
+				{
+					List<Conditional> cnds=obj as List<Conditional>;
+					List<Conditional> nw=new List<Conditional>();
+					foreach(Conditional cn in cnds)
+					{
+						nw.Add(cn.duplicate());
+					}
+					ret._values[key]=nw;
+					continue;
+				}
+				if(obj is System.ICloneable)
+				{
+					System.ICloneable cl=obj as System.ICloneable;
+					ret._values[key]=cl.Clone();
+					continue;
+				}
+				ret._values[key]=obj;
+
+			}
+			return ret;
+		}
+		public bool hasVariable(string var)
+		{
+			return _values.ContainsKey(var);
+		}
 		public object this[string name]
 		{
 			get{
@@ -249,72 +291,48 @@ public class SingleGame
 		}
 	}
 
-	public class ConditionList
-	{
-		protected List<List<Condition>> _conds;
-		public ConditionList()
-		{
-			_conds=new List<List<Condition>>();
-		}
-		public void addAndCond(Condition cnd, bool not)
-		 {
-			if(_conds.Count==0)
-			{
-				_conds.Add(new List<Condition>());
-			}
-			List<Condition> last=_conds[_conds.Count-1];
-			cnd.inverse=not;
-			last.Add(cnd);
-		 }
-		public void addOrCond(Condition cnd, bool not)
-		{
-			_conds.Add(new List<Condition>());
-			List<Condition> last=_conds[_conds.Count-1];
-			cnd.inverse=not;
-			last.Add(cnd);
-		}
-		public bool isFulfilled(Conditional vars)
-		{
-			foreach(List<Condition> cl in _conds)
-			{
-				bool check=true;
-				foreach(Condition cnd in cl)
-				{
-					if(!cnd.isFulfilled(vars)){check=false; break;}
-				}
-				if(check) return true;
-			}
-			return false;
-		}
-	}
 
 	public class Effect : Conditional
 	{
 		//public int ownerID;//player
 		public bool applied; //for applying iteration
 		public bool active;//may be suppressed by other effects
-		ConditionList conditions;
+		Condition conditions;
 		public Effect():base()
 		{
 			acceptedTypes[ownID]=typeof(int);
-			this.setTag(SCOPE_EFFECT);// all effects are this scope
+			this.setTag(SCOPE_EFFECT);// all effects are this scope, effects that would affect other effects need to check for this tag
 		}
 
 	}
+
+	public class Event:Conditional
+	{
+	public Event(float delay=0):base()
+		{
+			acceptedTypes[_delay]=typeof(float);
+			_values[_delay]=delay;
+		}
+    public float advanceTime(float shift)
+		{
+			float cdelay=(float)this[_delay];
+			if(cdelay<shift) 
+			{
+				#if THING
+				Debug.Log(string.Format("Invalid time shifting at Event {0} of time {1}",this,shift));
+				#endif
+				shift=cdelay;
+			}
+			cdelay-=shift;
+			this[_delay]=cdelay;
+			return shift;
+		}
+	}
+
 	public class EffectList
 	{
 
 	}
 }
-public class GameClasses   {
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
-}
+
