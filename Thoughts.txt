@@ -6,4 +6,24 @@ Step 2: Apply effects in loop, from older to newer, until no new effects can be 
 
 How do I check for conditions?
 
+Do I write a simple language?
+How is a card played?
+1. choosing: effects that prevent objects from being chosen? Should be external to data, I guess. With possible additional conditions.
+condition selectable left_arm_transformcard?
+you can play card or ability
+Ability is like a card thing
+parametric conditionals..., with ellipsis (for tags)
+
+Triggerable one-shots?
+
+On-dismiss effects?
+Do we allow additional refs after definition? in conditionals,etc
+//let's say I want : if life played on right hand, move card to discard
+conditional=effect
+Atomic instruction blocks! _target
+ _execute
+
+
+
+
 

@@ -1,0 +1,86 @@
+condition tag_la_busy
+{
+tag LEFT_ARM_BUSY
+}
+
+condition tag_la_transformed
+{
+tag LEFT_ARM_TRANSFORMED
+}
+
+condition tag_loc_hand
+{
+tag LOCATION_HAND
+}
+
+condition left_arm_open
+{
+inverse
+or {
+   tag_la_busy
+   tag_la_transformed
+   }
+}
+condition left_arm_transformcard
+{
+and {
+     left_arm_open
+     tag_loc_hand
+     }
+}
+
+conditional timedprice (_price,_time)
+{
+float price _price
+float time _time
+}
+conditional baseattack (_price,_damage,_text,...)
+{
+tag ATTACK
+tag TARGETING
+string text _text
+float price _price
+float damage _damage
+}
+conditional clawthing
+{
+condition _condition {
+and {
+right_hand_transformed
+right_hand_biological
+   }
+}
+
+function _target 
+ {
+ append .Targets .Source 
+ }
+function _execute
+ {
+ foreach .Targets:
+  
+ }
+}
+conditional clawcard
+{
+string name "Simple claws - left"
+tag CARD
+tag TRANSFORMATION
+tag ELEMENT_LIFE
+tag POS_LEFT_HAND
+float summon 50
+float dismissal 10
+conditional maintenance timedprice(1,2)
+
+float delay 0
+//abilities!
+list abilities
+{
+conditional claw baseattack(1,20,"Claw the eyes out",DISTANCE_MELEE)
+}
+//effects - in play until the card goes away
+list effects
+{
+
+}
+}
