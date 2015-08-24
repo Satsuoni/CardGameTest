@@ -3,7 +3,7 @@
 using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-
+using System.Text;
 public class SingleGame
 {
 //Scope tags
@@ -331,6 +331,289 @@ public class SingleGame
 
 	public class EffectList
 	{
+
+	}
+	public class Parser
+	{
+		static string _text;
+		static int rpos=0;
+		enum types
+		{
+			CONDITION,
+			CONDITIONAL,
+			FUNCTION,
+			INT,
+			FLOAT, 
+			STRING
+		}
+		public static readonly string[] BaseTypes = { "condition", "conditional", "function", "int","float","string" };
+		public static Dictionary<string,object> _context=new Dictionary<string, object>();
+		public static void ParseIntoContext(string txt)
+		{
+			_text=txt;
+			rpos=0;
+		}
+		public static string readString(string _txt,ref int pos,out bool res)
+		{
+			//skip whitespace
+			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
+			res=true;
+			if(pos==_txt.Length) 
+			{
+                #if THING
+				Debug.LogWarning("no string encountered until end of file");
+				#endif
+				res=false;
+				return null;
+			}
+			StringBuilder ret=new StringBuilder();
+			if(_txt[pos]=='{')
+			{
+				res=true;
+				pos++;
+				return "{";//opening brace
+			}
+			if(_txt[pos]=='"') //opening quote
+			{
+				pos++;
+				while(pos<_txt.Length&&_txt[pos]!='"')
+				{
+					if(_txt[pos]!='\\')
+					ret.Append(_txt[pos]);
+					else
+					{
+						pos++;
+						if(pos<_txt.Length) ret.Append(_txt[pos]);
+					}
+					pos++;
+				}
+				if(pos==_txt.Length)
+				{
+					#if THING
+					Debug.LogWarning("no end quote encountered");
+					#endif
+					res=false;
+					return null;
+				}
+				pos++;
+				return ret.ToString();
+			} // end quote
+			while(pos<_txt.Length&&!char.IsWhiteSpace(_txt[pos])&&_txt[pos]!='('&&_txt[pos]!='{') 
+			{
+				ret.Append(_txt[pos]);
+				pos++;
+			}
+			return ret.ToString();
+		}
+
+		public static string readParameter(string _txt,ref int pos,out bool res)
+		{
+			//skip whitespace
+			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
+			res=true;
+			if(pos==_txt.Length) 
+			{
+				#if THING
+				Debug.LogWarning("no string encountered until end of file in Parameter read");
+				#endif
+				res=false;
+				return null;
+			}
+			StringBuilder ret=new StringBuilder();
+			if(_txt[pos]==')')
+			 {
+				#if THING
+				Debug.Log("Parameter expected, but ) encountered - might be OK");
+				#endif
+				res=false;
+				return null;
+			 }
+			if(_txt[pos]==',')
+			{
+				#if THING
+				Debug.Log("Parameter expected, but , encountered - parameter assumed empty");
+				#endif
+				res=true;
+				return "";
+			}
+			if(_txt[pos]=='"') //opening quote
+			{
+				pos++;
+				while(pos<_txt.Length&&_txt[pos]!='"')
+				{
+					if(_txt[pos]!='\\')
+						ret.Append(_txt[pos]);
+					else
+					{
+						pos++;
+						if(pos<_txt.Length) ret.Append(_txt[pos]);
+					}
+					pos++;
+				}
+				if(pos==_txt.Length)
+				{
+					#if THING
+					Debug.LogWarning("no end quote encountered");
+					#endif
+					res=false;
+					return null;
+				}
+				pos++;
+
+			}// end quote
+			else
+			{
+				while(pos<_txt.Length&&!char.IsWhiteSpace(_txt[pos])&&_txt[pos]!=','&&_txt[pos]!=')') 
+				{
+					ret.Append(_txt[pos]);
+					pos++;
+				}
+			}
+
+
+			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
+			if(_txt[pos]!=','&&_txt[pos]!=')')
+			{
+				#if THING
+				Debug.LogWarning(string.Format("Invalid syntax in string at pos: {0} - should be ) or , but is {1}",pos,_txt[pos]));
+				#endif
+				
+				res=false;
+				return ret.ToString();
+			}
+			if(_txt[pos]==',')
+				pos++;
+			return ret.ToString();
+
+
+		}
+
+		public static T readTypeCast<T>(string _txt,ref int pos,out bool res)
+		{
+			bool strd=false;
+			string rstr=readString(_txt,ref pos,out strd);
+			if(!strd)
+			{
+				res=false;
+				return default(T);
+			}
+			T ret=default(T);
+			try
+			{
+				ret=(T)System.ComponentModel.TypeDescriptor.GetConverter(typeof(T)).ConvertFromString(rstr);
+				res=true;
+			}
+			catch
+			{
+				res=false;
+			}
+			
+			return (T)ret;
+
+		}
+		/*public static object getPrototypeFromString(string tp)
+		{
+			if(tp=="condition") return new Condition();
+			if(tp
+		}*/
+		public class Parametric //hmm...
+		{
+			public object Resolve(List<object> pars)
+			{
+			}
+		}
+		public static object readDefinition(string _txt,ref int pos,out bool res)
+		{
+			bool result=false;
+			object ret=null;
+			string type=readString(_txt,ref pos,out result);
+			if(!result)
+			{
+				#if THING
+				Debug.LogWarning(string.Format("Cannot read definition in string at pos: {0} - type missing",pos));
+				#endif
+				res=false;
+				return null;
+			}
+			if(System.Array.IndexOf(BaseTypes,type)==-1&&!_context.ContainsKey(type))
+			{
+				#if THING
+				Debug.LogWarning(string.Format("Cannot read definition in string at pos: {0} - invalid type {1}",pos,type));
+				#endif
+				res=false;
+				return null;
+			}
+			string name=readString(_txt,ref pos,out result);
+			if(!result)
+			{
+				#if THING
+				Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - invalid name",pos));
+				#endif
+				res=false;
+				return null;
+			}
+			string def=readString(_txt,ref pos,out result);
+			bool parametricDefinition=false;
+			List<string> pars=new List<string>();
+			if(def[0]=='(')//parameters
+			{
+				pos=pos-def.Length+1;
+				bool parread=false;
+
+				string par=readParameter(_txt,pos,parread);
+				while(parread&&_txt[pos]!=')')
+				{
+					pars.Add(par);
+					par=readParameter(_txt,pos,parread);
+				}
+				if(_txt[pos]!=')')
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - invalid parameter definition",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				parametricDefinition=true;
+				def=readString(_txt,ref pos,out result);
+			}
+			if(def[0]!='{') //alias
+			{
+				if(!_context.ContainsKey(def))
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - unknown alias {1}",pos,def));
+					#endif
+					res=false;
+					return null;
+				}
+				object alias=_context[def];
+				if(alias is Parametric)
+				{
+					def=readString(_txt,ref pos,out result);
+					if(!result||def[0]!='(')
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - parametric alias without parameters",pos));
+						#endif
+						res=false;
+						return null;
+					}
+					pos=pos-def.Length+1;
+
+				}
+				else
+				{
+					ret=alias;
+				}
+				def=readString(_txt,ref pos,out result);
+			}
+			if(System.Array.IndexOf(BaseTypes,type)!=-1)
+			{
+				//it is one of the base types. Switch.
+
+			}
+		}
 
 	}
 }

@@ -58,7 +58,9 @@ function _target
 function _execute
  {
  foreach .Targets:
-  
+  {
+   dismiss
+   }
  }
 }
 conditional clawcard

@@ -26,8 +26,13 @@ public class Temptest : MonoBehaviour {
 		foreach(object o in(IList) ch)
 			Debug.Log(o);
 
-
-
+		bool rt;
+		int pos=0;
+		Debug.Log(SingleGame.Parser.readTypeCast<float>("122.21 tt aha",ref pos,out rt));
+		pos=0;
+		Debug.Log(SingleGame.Parser.readParameter("one, two , three)",ref pos,out rt));
+		Debug.Log(SingleGame.Parser.readParameter("one, two , three)",ref pos,out rt));
+		Debug.Log(SingleGame.Parser.readParameter("one, two , three)",ref pos,out rt));
 	}
 	
 	// Update is called once per frame
