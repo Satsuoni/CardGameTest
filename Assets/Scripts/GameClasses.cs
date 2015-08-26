@@ -10,6 +10,7 @@ public class SingleGame
 	public const string SCOPE_EFFECT="SCOPE_EFFECT";
 	public const string SCOPE_TIMELINE="SCOPE_TIMELINE";
 	public const string SCOPE_HAND="SCOPE_HAND";
+	public const string SCOPE_COMMAND="SCOPE_COMMAND";
 //elements
 	public const string ELEMENT_PHYSICAL="ELEMENT_PHYSICAL";
 	public const string ELEMENT_DARK="ELEMENT_DARK";
@@ -21,6 +22,14 @@ public class SingleGame
 	public const string ownID="ownerID";
 	public const string _count="_count";
 	public const string _delay="_delay"; //timeline delay for Event
+	public const string _target="_target";
+	public const string _value="_value";
+	public const string _args="_arguments";
+	public const string _effects="_effects";
+	public const string _effect="_effect";
+	public const string _condition="_condition";
+	public const string _commands="_commands";
+	public const string _returnValue="_returnValue";
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
@@ -123,6 +132,145 @@ public class SingleGame
 			_tags.Remove(tag);
 		}
 	}
+	public class Operation:Conditional
+	{
+		public enum Commands
+		{
+        TAG_SET,
+		TAG_SWITCH,
+		VALUE_SET,
+			ADD,
+			SUBTRACT,
+			MULTIPLY,
+			DIVIDE,
+			ABORT,
+			CONTINUE,
+			RETURN
+		}
+		Commands _command;
+		public Operation(Commands com)
+		{
+			_command=com;
+		}
+		public Conditional createStack(Conditional oldstack=null)
+		{
+			return null;//TODO
+		}
+		void __pureExecute(Conditional stack)
+		{
+			if(stack.hasTag("ABORT")) return;
+			Conditional target=stack[_target] as Conditional;
+			IList args=this[_args] as IList;
+			switch(_command)
+			{
+			case Commands.TAG_SET:{target.setTag(args[0] as string);}break;
+			case Commands.TAG_SWITCH:{
+				 if(target.hasTag(args[0] as string))
+				 {
+					target.removeTag(args[0] as string);
+					target.setTag(args[1] as string);
+				 }
+			      }break;
+			case Commands.VALUE_SET:{target[args[0] as string]=args[1];}break;
+			case Commands.ADD:{
+				object a1=target[args[0] as string];
+				object a2=args[1];
+				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2),a1.GetType());}break;
+			case Commands.SUBTRACT:{
+				object a1=target[args[0] as string];
+				object a2=args[1];
+				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2),a1.GetType());}break;
+			case Commands.MULTIPLY:{
+				object a1=target[args[0] as string];
+				object a2=args[1];
+				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2),a1.GetType());}break;
+			case Commands.DIVIDE:{
+				object a1=target[args[0] as string];
+				object a2=args[1];
+				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2),a1.GetType());}break;
+			case Commands.ABORT:
+			{
+				stack.setTag("ABORT");
+			}break;
+			case Commands.CONTINUE:
+			{
+				stack.setTag("CONTINUE");
+			}break;
+			case Commands.RETURN:
+			{
+				stack.setTag("RETURN");
+				stack[_returnValue]=args[0];
+			}break;
+			};
+		}
+		Operation executeList(object lst, Conditional stack)
+		{
+			if(!(lst is IList))
+			{
+				#if THING
+				Debug.Log("Invalid command list");
+				#endif
+				return null;
+			}
+		}
+		void iterateOverEffects(IList efs,Conditional stack,string tag)
+		{
+			if(stack.hasTag("ABORT")) return;
+			foreach(object o in efs)
+			{
+				Conditional effect=o as Conditional;
+				if(effect!=null&&effect.hasTag(tag)&&!effect.hasTag("ACTIVATED"))
+				{
+					effect=effect[_effect] as Conditional;
+					Condition cn=effect[_condition] as Condition;
+					if(cn==null)
+					{
+						Debug.Log(string.Format("Invalid effect condition {0}",effect[_condition]));
+					}
+					else
+					{
+						if(cn.isFulfilled(stack)) //execute effect
+						{
+							Operation ret= executeList(effect[_commands],stack);
+							if(ret!=null)
+							 ret.__pureExecute(stack);
+							if(stack.hasTag("ABORT")) return;
+						}
+					}
+					
+				}
+				else
+				{
+					Debug.Log(string.Format("Invalid effect {0}",o));
+				}
+			}
+		}
+		void _execute(Conditional stack)
+		{
+			IList efs=stack[_effects] as IList;
+			if(efs==null)
+			{
+         #if THING
+				Debug.Log("Possibly invalid setting of _effects in stack");
+         #endif
+			}
+			else
+			{
+				stack.setTag("EXECUTE_PREFIX");
+				iterateOverEffects(efs,stack,"EXECUTE_PREFIX");
+				stack.removeTag("EXECUTE_PREFIX");
+			}
+				__pureExecute(stack);
+			if(efs!=null)
+			{
+				stack.setTag("EXECUTE_POSTFIX");
+				iterateOverEffects(efs,stack,"EXECUTE_POSTFIX");
+				stack.removeTag("EXECUTE_POSTFIX");
+			}
+
+			
+		}
+	}
 	public class Condition //a single condition
 	{
 		public enum Type
@@ -145,18 +293,18 @@ public class SingleGame
 		public bool inverse;
 		public Type type;
 		//public Type type_compound;//type to use for compound conditions
-		public string variable; //variable name to compare OR tag
+		public string [] variables; //variable name to compare OR tag
 		//public string variable_compound;
 		public object [] values;//value(s) to compare to
 		public Condition()
 		{
 			inverse=false;
 		}
-		public Condition(Type t, string var, params object [] val)
+		public Condition(Type t, string  [] var, params object [] val)
 		{
 			inverse=false;
 			type=t;
-			variable=var;
+			variables= var;
 			values=new object [val.Length];
 			for(int i=0;i<val.Length;i++)
 			{
@@ -172,6 +320,23 @@ public class SingleGame
 		}
 		protected bool __isFulfilled(Conditional cnd)
 		{
+			string variable="";
+			if(variables.Length==0) return false;
+			if(variables.Length>1)
+			{
+				string [] deeper=new string[variables.Length-1];
+				for(int i=1;i<variables.Length;i++)
+					deeper[i-1]=variables[i];
+				string cvar=variables[0];
+				Conditional cv=cnd[cvar] as Conditional;
+				if(cv==null)
+					return false;
+				Condition deepcond=new Condition(type,deeper,values);
+				return deepcond.__isFulfilled(cv);
+			}
+			else
+				variable=variables[0];
+
 			if(type==Type.TAG)
 				return cnd.hasTag(variable);
 			if(type==Type.STRING)
@@ -560,11 +725,11 @@ public class SingleGame
 				pos=pos-def.Length+1;
 				bool parread=false;
 
-				string par=readParameter(_txt,pos,parread);
+				string par=readParameter(_txt,ref pos,out parread);
 				while(parread&&_txt[pos]!=')')
 				{
 					pars.Add(par);
-					par=readParameter(_txt,pos,parread);
+					par=readParameter(_txt,ref pos,out parread);
 				}
 				if(_txt[pos]!=')')
 				{
@@ -613,6 +778,7 @@ public class SingleGame
 				//it is one of the base types. Switch.
 
 			}
+			return null;//TODO
 		}
 
 	}
