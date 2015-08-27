@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading;
 public class SingleGame
 {
 //Scope tags
@@ -17,22 +18,36 @@ public class SingleGame
 	public const string ELEMENT_LIGHT="ELEMENT_LIGHT";
 	public const string ELEMENT_LIFE="ELEMENT_LIFE";
 	public const string ELEMENT_DEATH="ELEMENT_DEATH";
-
+//helper tags
+	public const string EXECUTE_PREFIX="EXECUTE_PREFIX";
+	public const string TAG_ABORT="ABORT";
+	public const string TAG_STACKED="STACKED";
+	public const string TAG_ACTIVATED="ACTIVATED";
+	public const string TAG_RETURN="RETURN";
+	public const string TAG_CONTINUE="CONTINUE";
+	public const string TAG_SUPPRESSED="SUPPRESSED";
 // "variable" names
 	public const string ownID="ownerID";
 	public const string _count="_count";
 	public const string _delay="_delay"; //timeline delay for Event
 	public const string _target="_target";
+	public const string _targetList="_targetList";
 	public const string _value="_value";
 	public const string _args="_arguments";
 	public const string _effects="_effects";
 	public const string _effect="_effect";
 	public const string _condition="_condition";
 	public const string _commands="_commands";
+	public const string _currentCommand="_currentCommand";
 	public const string _returnValue="_returnValue";
+	public const string _Game="_GAME";
+	public const string _Source="_Source";
+	public static readonly string[] __stackValues={_Game};
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
+//hooks
+	delegate void uiHook(params object[] parameters);
 //classes
 
 	public class Conditional
@@ -79,15 +94,32 @@ public class SingleGame
 		{
 			return _values.ContainsKey(var);
 		}
-		public object this[string name]
+		public object this[string name] //let us add the dot notation...
 		{
 			get{
+				string [] ln=name.Split('.');
+				if(ln.Length==1)
+				 {
 				object ret=null;
-				if(_values.TryGetValue(name,out ret)) return ret;
+				if(_values.TryGetValue(ln[0],out ret)) return ret;
 				else return null;
+				 }
+				else
+				{
+					object ret=null;
+					if(_values.TryGetValue(ln[0],out ret)) 
+					{
+						Conditional nxt=ret as Conditional;
+						return nxt[name.Substring(ln[0].Length+1)];//hopefully...
+					}
+					else return null;
+				}
 			   }
 			set
 			{
+				string [] ln=name.Split('.');
+				if(ln.Length==1)
+				{
 				if(acceptedValues!=null&&acceptedValues.ContainsKey(name))
 				{
 					List<object> acc=acceptedValues[name];
@@ -112,6 +144,16 @@ public class SingleGame
 					}
 				}
 				_values[name]=value;
+				}
+				else
+				{
+					object ret=null;
+					if(_values.TryGetValue(ln[0],out ret)) 
+					{
+						Conditional nxt=ret as Conditional;
+						nxt[name.Substring(ln[0].Length+1)]=value;//hopefully...
+					}
+				}
 			}
 		}
 		public Conditional()
@@ -132,6 +174,190 @@ public class SingleGame
 			_tags.Remove(tag);
 		}
 	}
+	public class GameManager
+	{
+		Conditional _GameData;
+		object locket=new object();
+		Thread gameThread;
+		EventWaitHandle _waitHandle ;
+		static GameManager self=null;
+
+		bool _choiceInProgress=false;
+		public bool choiceInProgress
+		{
+			get {
+				return _choiceInProgress;
+			}
+		}
+		bool _hookInProgress=false;
+		public bool isWaiting
+		{
+			get {
+				return _choiceInProgress||_hookInProgress;
+			}
+		}
+		public bool hookInProgress
+		{
+			get{return _hookInProgress;}
+		}
+		Conditional _hookData;
+		public Conditional hookData
+		{
+			get{return _hookData;}
+		}
+		Conditional chosen=null;
+		IList _choiceList;
+		public IList choiceList
+		{
+			get{return _choiceList;}
+		}
+		void mainGameThread()
+		{
+			IList rulesAndEffects=_GameData[_effects] as IList;
+		   Conditional stack=new Conditional();
+			stack[_Game]=_GameData;
+			List<Conditional> wrappedEffects=new List<Conditional>();
+			foreach(object obj in rulesAndEffects)
+			{
+				Conditional eff=obj as Conditional;
+				if(eff==null)
+				{
+					#if THING
+					Debug.Log(string.Format("Invalid effect description: {0}",obj));
+					#endif
+				}
+				else
+				{
+					Conditional wrap=new Conditional();
+					wrap[_effect]=eff;
+					wrappedEffects.Add(wrap);
+				}
+			}
+			stack[_effects]=wrappedEffects;
+			stack[_target]=null;
+
+			//TODO
+			while(true)
+			{
+
+			}
+		}
+		public static Conditional startChoice(IList objects)
+		{
+			if(self==null||Thread.CurrentThread!=self.gameThread)
+			{
+				#if THING
+				Debug.Log(string.Format("Invalid thread calling choice: {0}",Thread.CurrentThread));
+				#endif
+				return null;
+			}
+			if(self._choiceInProgress)
+			{
+				#if THING
+				Debug.Log(string.Format("Choice called for the second time -wtf?: {0}",Thread.CurrentThread));
+				#endif
+				return null;
+			}
+        lock(self.locket)
+			{
+				self._choiceInProgress=true;
+				self._choiceList=objects;
+			}
+			self._waitHandle.WaitOne();
+			Conditional ret=null;
+			lock(self.locket)
+			{
+				self._choiceInProgress=false;
+				self._choiceList=null;
+				ret=self.chosen;
+			}
+			return ret;
+		}
+		public static void endChoice(Conditional retValue)
+		{
+			if(self==null||Thread.CurrentThread==self.gameThread)
+			{
+				#if THING
+				Debug.Log(string.Format("Invalid thread calling choice end: {0}",Thread.CurrentThread));
+				#endif
+				return;
+			}
+			if(!self._choiceInProgress)
+			{
+				#if THING
+				Debug.Log(string.Format("Choice called when it was not asked for"));
+				#endif
+				return;
+			}
+			lock(self.locket)
+			{
+				self._choiceInProgress=false;
+				self.chosen=retValue;
+			}
+			self._waitHandle.Set();
+		}
+		public static void startHook(Conditional hookData)
+		{
+			if(self==null||Thread.CurrentThread!=self.gameThread)
+			{
+				#if THING
+				Debug.Log(string.Format("Invalid thread calling hook start: {0}",Thread.CurrentThread));
+				#endif
+				return;
+			}
+			if(self._hookInProgress)
+			{
+				#if THING
+				Debug.Log(string.Format("Hook called for the second time -wtf?: {0}",Thread.CurrentThread));
+				#endif
+				return ;
+			}
+			lock(self.locket)
+			{
+				self._hookInProgress=true;
+				self._hookData=hookData;
+			}
+			self._waitHandle.WaitOne();
+
+			lock(self.locket)
+			{
+				self._hookInProgress=false;
+				self._hookData=null;
+
+			}
+		}
+		public static void endHook()
+		{
+			if(self==null||Thread.CurrentThread==self.gameThread)
+			{
+				#if THING
+				Debug.Log(string.Format("Invalid thread calling hook end: {0}",Thread.CurrentThread));
+				#endif
+				return;
+			}
+			if(!self._hookInProgress)
+			{
+				#if THING
+				Debug.Log(string.Format("Hook end called when it was not asked for"));
+				#endif
+				return;
+			}
+			self._waitHandle.Set();
+		}
+		public void Start()
+		{
+			if(self!=null)
+			{
+				#if THING
+				Debug.Log(string.Format("GameManager not cleared properly...."));
+				#endif
+			}
+			self=this;
+			gameThread=new Thread(mainGameThread);
+			_waitHandle =new AutoResetEvent(false);
+			gameThread.Start();
+		}
+	}
 	public class Operation:Conditional
 	{
 		public enum Commands
@@ -145,20 +371,60 @@ public class SingleGame
 			DIVIDE,
 			ABORT,
 			CONTINUE,
-			RETURN
+			RETURN,
+			FOREACH, //looks like foreach and target would have to be separate
+			TARGET,
+			ACCUMULATE, //like target, but for arbitrary list
+			CLEAR, //sets argument to null
+			HOOK, //calls hook on the main thread
+			NEW, //makes new conditional of name on stack
+			///list operations
+			POP, //get fist and delete
+			PUSH, //put first
+			APPEND, //put last
+			SHIFT,//get last and delete
+			REMOVE,
+			ANY, //get any in list without deleting
 		}
 		Commands _command;
 		public Operation(Commands com)
 		{
 			_command=com;
 		}
-		public Conditional createStack(Conditional oldstack=null)
+		public Conditional createStack(Conditional oldstack,Conditional exeffect)
 		{
-			return null;//TODO
+			Conditional ret=new Conditional();
+			List <Conditional> efs=new List<Conditional>();
+			if(oldstack[_effects]==null)
+				ret[_effects]=null;
+			else
+			{
+				IList elist=oldstack[_effects] as IList;
+				foreach(object ef in elist)
+				{
+					Conditional eff=ef as Conditional;
+					Conditional efContain=new Conditional();
+					if(eff.hasTag(TAG_STACKED))
+						efContain.setTag(TAG_STACKED);
+					if(eff==exeffect)
+					{
+						Debug.Log(string.Format("Stacking: {0}",ef));
+						efContain.setTag(TAG_STACKED);
+					}
+					efContain[_effect]=eff[_effect];
+				}
+				ret[_effects]=efs;
+			}
+			ret[_target]=this;//current command becomes a target?
+			ret[_currentCommand]=null;
+			foreach(string nm in __stackValues)
+			  ret[nm]=oldstack[nm];
+			ret[_Source]=exeffect[_effect];
+			return ret;//TOFIX
 		}
-		void __pureExecute(Conditional stack)
+		void  __pureExecute(Conditional stack)
 		{
-			if(stack.hasTag("ABORT")) return;
+			if(stack.hasTag(TAG_ABORT)) return;
 			Conditional target=stack[_target] as Conditional;
 			IList args=this[_args] as IList;
 			switch(_command)
@@ -190,20 +456,202 @@ public class SingleGame
 				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2),a1.GetType());}break;
 			case Commands.ABORT:
 			{
-				stack.setTag("ABORT");
+				stack.setTag(TAG_ABORT);
 			}break;
 			case Commands.CONTINUE:
 			{
-				stack.setTag("CONTINUE");
+				stack.setTag(TAG_CONTINUE);
 			}break;
-			case Commands.RETURN:
+			case Commands.NEW:
 			{
-				stack.setTag("RETURN");
+				string nm=args[0] as string;
+				if(stack[nm] as Conditional==null)
+					stack[nm]=new Conditional();
+			}break;
+			case Commands.RETURN: //argument :  returned command/operation
+			{
+				stack.setTag(TAG_RETURN);
 				stack[_returnValue]=args[0];
 			}break;
+			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack args[1]->list of commands
+			{
+				string lname=args[0] as string;
+				if(stack[lname]!=null)
+				{
+					IList lst=stack[lname] as IList;
+					if(lst!=null)
+					{
+						foreach(object pcn in lst)
+						{
+							Conditional newtarget=pcn as Conditional;
+							if(newtarget==null)
+							{
+								#if THING
+								Debug.Log("Invalid target in foreach list");
+								#endif
+							}
+							else
+							{
+								stack[_target]=newtarget;
+								executeList(args[1],stack);
+								if(stack.hasTag(TAG_ABORT)) return;
+								stack.removeTag(TAG_CONTINUE);
+							}
+						}
+					}
+					else
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid foreach argument: {0}",lname));
+						#endif
+					}
+				}
+			}break;
+				case Commands.TARGET://will assign _targetList? value in stack arg0 - condition, arg1 - list, equivalent of accumulate for specific list
+				{
+					List<Conditional> targs=new List<Conditional>();
+					Condition baseCond=args[0] as Condition;
+					if(baseCond==null)
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid target condition : {0}",args[0]));
+						#endif
+						return;
+					}
+					IList vars=stack[args[1] as string] as IList;
+					if(vars==null)
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid target list : {0}",args[1]));
+						#endif
+						return;
+					}
+					foreach(object potCn in vars)
+					{
+						Conditional check=potCn as Conditional;
+						if(baseCond.isFulfilled(check)) targs.Add(check);
+					}
+					stack[_targetList]=targs;
+				};break;
+			case Commands.ACCUMULATE://will assign arg2 value in stack arg0 - condition, arg1 - list. appends to list if it exists
+			{
+				List<Conditional> targs=new List<Conditional>();
+				string listname=args[2] as string;
+				IList oldList=stack[listname] as IList;
+				if(oldList!=null)
+				{
+					foreach(object l in oldList) targs.Add(l as Conditional);
+				}
+				Condition baseCond=args[0] as Condition;
+				if(baseCond==null)
+				{
+					#if THING
+					Debug.Log(string.Format("Invalid target condition : {0}",args[0]));
+					#endif
+					return;
+				}
+				IList vars=stack[args[1] as string] as IList;
+				if(vars==null)
+				{
+					#if THING
+					Debug.Log(string.Format("Invalid target list : {0}",args[1]));
+					#endif
+					return;
+				}
+				foreach(object potCn in vars)
+				{
+					Conditional check=potCn as Conditional;
+					if(baseCond.isFulfilled(check)) targs.Add(check);
+				}
+				stack[listname]=targs;
+			};break;
+			case Commands.CLEAR:
+			{
+				string nm=args[0] as string;
+				if(nm!=null)
+					stack[nm]=null;
+			};break;
+			case Commands.POP: //arg0 - list name, arg1- stackvar
+			{
+				string nm=args[0] as string;
+				IList lst=stack[nm] as IList;
+				string retname=args[1] as string;
+				if(lst!=null&&retname!=null)
+				{
+					if(lst.Count>0)
+					{
+						stack[retname]=lst[0];
+						lst.RemoveAt(0);
+					}
+				}
+			};break;
+			case Commands.PUSH: //arg0 - list name, arg1- stackvar
+			{
+				string nm=args[0] as string;
+				IList lst=stack[nm] as IList;
+				string retname=args[1] as string;
+				if(lst==null) {lst=new List<object>(); stack[nm]=lst;} //should be avoided...
+				if(lst!=null&&retname!=null&&stack[retname]!=null)
+				{
+					lst.Insert(0,stack[retname]);
+				}
+			};break;
+			case Commands.SHIFT: //arg0 - list name, arg1- stackvar
+			{
+				string nm=args[0] as string;
+				IList lst=stack[nm] as IList;
+				string retname=args[1] as string;
+				if(lst!=null&&retname!=null)
+				{
+					if(lst.Count>0)
+					{
+						stack[retname]=lst[lst.Count-1];
+						lst.RemoveAt(lst.Count-1);
+					}
+				}
+			};break;
+			case Commands.APPEND: //arg0 - list name, arg1- stackvar
+			{
+				string nm=args[0] as string;
+				IList lst=stack[nm] as IList;
+				string retname=args[1] as string;
+				if(lst==null) {lst=new List<object>(); stack[nm]=lst;} //should be avoided...
+				if(lst!=null&&retname!=null&&stack[retname]!=null)
+				{
+					lst.Add(stack[retname]);
+				}
+			};break;
+			case Commands.REMOVE: // removes object from listarg0 - list name, arg1- stackvar
+			{
+				string nm=args[0] as string;
+				IList lst=stack[nm] as IList;
+				string retname=args[1] as string;
+				if(lst==null) {lst=new List<object>(); stack[nm]=lst;} //should be avoided...
+				if(lst!=null&&retname!=null&&stack[retname]!=null)
+				{
+					lst.Remove(stack[retname]);
+				}
+			};break;
+			case Commands.ANY: //get any (random) in list without deleting arg0 - list name, arg1- stackvar
+			{
+				string nm=args[0] as string;
+				IList lst=stack[nm] as IList;
+				string retname=args[1] as string;
+				if(lst!=null&&retname!=null)
+				{
+					if(lst.Count>0)
+					{
+
+						stack[retname]=lst[Random.Range(0,lst.Count)];
+
+					}
+				}
+			};break;
+
 			};
+
 		}
-		Operation executeList(object lst, Conditional stack)
+		Operation executeList(object lst, Conditional stack) //has *new* stack as parameter
 		{
 			if(!(lst is IList))
 			{
@@ -212,16 +660,48 @@ public class SingleGame
 				#endif
 				return null;
 			}
+			IList list=lst as IList;
+			foreach(object obj in list)
+			{
+				Operation op = obj as Operation;
+				if(op==null)
+				{
+					#if THING
+					Debug.Log(string.Format("Invalid command: {0}",obj));
+					#endif
+					return null;
+				}
+				op._execute(stack);
+				if(stack.hasTag(TAG_RETURN))
+					return stack[_returnValue] as Operation;
+				if(stack.hasTag(TAG_ABORT))
+					return null;
+				//newstack[_command]
+			}
+			return null;
 		}
 		void iterateOverEffects(IList efs,Conditional stack,string tag)
 		{
-			if(stack.hasTag("ABORT")) return;
+			if(stack.hasTag(TAG_ABORT)) return;
+			bool didActivate=true;
+				foreach(object o in efs)
+				{
+					Conditional preffect=o as Conditional;
+					if(preffect!=null)
+						preffect.removeTag(TAG_ACTIVATED);
+				}
+			while(didActivate)
+				{
+					didActivate=false;
 			foreach(object o in efs)
 			{
-				Conditional effect=o as Conditional;
-				if(effect!=null&&effect.hasTag(tag)&&!effect.hasTag("ACTIVATED"))
+				Conditional preffect=o as Conditional;
+				Conditional effect=null;
+				if(preffect!=null&&!preffect.hasTag(TAG_ACTIVATED)&&!preffect.hasTag(TAG_STACKED))
 				{
-					effect=effect[_effect] as Conditional;
+					effect=preffect[_effect] as Conditional;
+					if(effect.hasTag(tag))
+					{
 					Condition cn=effect[_condition] as Condition;
 					if(cn==null)
 					{
@@ -231,12 +711,17 @@ public class SingleGame
 					{
 						if(cn.isFulfilled(stack)) //execute effect
 						{
-							Operation ret= executeList(effect[_commands],stack);
+							preffect.setTag(TAG_ACTIVATED);
+										didActivate=true;
+								Operation ret= executeList(effect[_commands],createStack(stack,effect));
 							if(ret!=null)
 							 ret.__pureExecute(stack);
-							if(stack.hasTag("ABORT")) return;
+							if(stack.hasTag(TAG_ABORT)) return;
 						}
 					}
+
+					}
+
 					
 				}
 				else
@@ -244,9 +729,11 @@ public class SingleGame
 					Debug.Log(string.Format("Invalid effect {0}",o));
 				}
 			}
+				}
 		}
-		void _execute(Conditional stack)
+		public void _execute(Conditional stack)
 		{
+			stack[_currentCommand]=this;
 			IList efs=stack[_effects] as IList;
 			if(efs==null)
 			{
@@ -256,16 +743,19 @@ public class SingleGame
 			}
 			else
 			{
-				stack.setTag("EXECUTE_PREFIX");
-				iterateOverEffects(efs,stack,"EXECUTE_PREFIX");
-				stack.removeTag("EXECUTE_PREFIX");
+				stack.setTag(EXECUTE_PREFIX);
+				iterateOverEffects(efs,stack,EXECUTE_PREFIX);
+				stack.removeTag(EXECUTE_PREFIX);
+				if(stack.hasTag(TAG_ABORT)) return;
 			}
 				__pureExecute(stack);
+			if(stack.hasTag(TAG_ABORT)) return;
 			if(efs!=null)
 			{
 				stack.setTag("EXECUTE_POSTFIX");
 				iterateOverEffects(efs,stack,"EXECUTE_POSTFIX");
 				stack.removeTag("EXECUTE_POSTFIX");
+				if(stack.hasTag(TAG_ABORT)) return;
 			}
 
 			
@@ -691,6 +1181,7 @@ public class SingleGame
 		{
 			bool result=false;
 			object ret=null;
+			res=false;
 			string type=readString(_txt,ref pos,out result);
 			if(!result)
 			{
