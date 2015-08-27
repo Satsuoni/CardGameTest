@@ -20,6 +20,7 @@ public class SingleGame
 	public const string ELEMENT_DEATH="ELEMENT_DEATH";
 //helper tags
 	public const string EXECUTE_PREFIX="EXECUTE_PREFIX";
+	public const string EXECUTE_POSTFIX="EXECUTE_POSTFIX";
 	public const string TAG_ABORT="ABORT";
 	public const string TAG_STACKED="STACKED";
 	public const string TAG_ACTIVATED="ACTIVATED";
@@ -201,6 +202,9 @@ public class SingleGame
 			get{return _hookInProgress;}
 		}
 		Conditional _hookData;
+		string _hookName=null;
+		public string hookName{ get{return _hookName;}
+		}
 		public Conditional hookData
 		{
 			get{return _hookData;}
@@ -236,10 +240,29 @@ public class SingleGame
 			stack[_effects]=wrappedEffects;
 			stack[_target]=null;
 
-			//TODO
+
 			while(true)
 			{
+				foreach(object obj in rulesAndEffects)
+				{
+					Conditional eff=obj as Conditional;
+					if(!eff.hasTag(EXECUTE_PREFIX)&&!eff.hasTag(EXECUTE_POSTFIX))
+					{
+						Condition cnd=eff[_condition] as Condition;
 
+						if(cnd.isFulfilled(stack))
+						{
+							Operation op=new Operation(Operation.Commands.NEW);
+							Conditional nstack=op.createStack(stack,eff);
+							op.executeList(eff[_commands],nstack);
+							if(nstack.hasTag(TAG_ABORT)) 
+							{
+								Debug.Log("GameObject Overlapped");
+								return;//gameover? I guess
+							}
+						}
+					}
+				}
 			}
 		}
 		public static Conditional startChoice(IList objects)
@@ -296,7 +319,7 @@ public class SingleGame
 			}
 			self._waitHandle.Set();
 		}
-		public static void startHook(Conditional hookData)
+		public static void startHook(string hName,Conditional hookData)
 		{
 			if(self==null||Thread.CurrentThread!=self.gameThread)
 			{
@@ -316,6 +339,7 @@ public class SingleGame
 			{
 				self._hookInProgress=true;
 				self._hookData=hookData;
+				self._hookName=hName;
 			}
 			self._waitHandle.WaitOne();
 
@@ -377,6 +401,7 @@ public class SingleGame
 			ACCUMULATE, //like target, but for arbitrary list
 			CLEAR, //sets argument to null
 			HOOK, //calls hook on the main thread
+			CHOICE, //calls for choice
 			NEW, //makes new conditional of name on stack
 			///list operations
 			POP, //get fist and delete
@@ -647,11 +672,32 @@ public class SingleGame
 					}
 				}
 			};break;
+			case Commands.HOOK: //call hook of name with data
+			{
+				string nm=args[0] as string;
+				string nmData=args[1] as string;
+				GameManager.startHook(nm,stack[nmData] as Conditional);
+			};break;
+			case Commands.CHOICE: //call for player choice, store result  in arg1: 
+			{
+				string nm=args[0] as string;
+				IList lst=stack[nm] as IList;
+				if(lst==null)
+				{
+					#if THING
+					Debug.Log(string.Format("Invalid choice list : {0}",nm));
+					#endif
+					return;
+				}
+				string nmRet=args[1] as string;
+				Conditional ret=GameManager.startChoice(lst);
+				stack[nmRet]=ret;
+			};break;
 
 			};
 
 		}
-		Operation executeList(object lst, Conditional stack) //has *new* stack as parameter
+		public Operation executeList(object lst, Conditional stack) //has *new* stack as parameter
 		{
 			if(!(lst is IList))
 			{
@@ -752,9 +798,9 @@ public class SingleGame
 			if(stack.hasTag(TAG_ABORT)) return;
 			if(efs!=null)
 			{
-				stack.setTag("EXECUTE_POSTFIX");
-				iterateOverEffects(efs,stack,"EXECUTE_POSTFIX");
-				stack.removeTag("EXECUTE_POSTFIX");
+								stack.setTag(EXECUTE_POSTFIX);
+				iterateOverEffects(efs,stack,EXECUTE_POSTFIX);
+				stack.removeTag(EXECUTE_POSTFIX);
 				if(stack.hasTag(TAG_ABORT)) return;
 			}
 
@@ -1175,6 +1221,7 @@ public class SingleGame
 		{
 			public object Resolve(List<object> pars)
 			{
+				return null;
 			}
 		}
 		public static object readDefinition(string _txt,ref int pos,out bool res)
