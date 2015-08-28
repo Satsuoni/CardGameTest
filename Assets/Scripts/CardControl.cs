@@ -64,23 +64,24 @@ public static class rtExt
 		Rect rct=go.rect;
 		Vector2 newOffsetMin=new Vector2(-intern.x*rct.width,-intern.y*rct.height);
 		Vector2 newOffsetMax=new Vector2(rct.width-intern.z*rct.width,rct.height-intern.w*rct.height);
-		Debug.Log(newOffsetMax);
-		Debug.Log(newOffsetMin);
+
 		RectTransform par=go.parent as RectTransform;
 		Rect ext=par.rect;
 		Vector2 urAnch=new Vector2(go.anchorMax.x*ext.size.x,go.anchorMax.y*ext.size.y);
 		Debug.Log((urAnch+go.offsetMax)/ext.height);
+		Debug.Log((urAnch+go.offsetMax)/ext.width);
 		Vector2 blAnch=new Vector2(go.anchorMin.x*ext.size.x,go.anchorMin.y*ext.size.y);
-		Debug.Log(blAnch/ext.height);
+		Debug.Log((blAnch+go.offsetMin)/ext.height);
 		urAnch+=go.offsetMax-newOffsetMax;
 		blAnch+=go.offsetMin-newOffsetMin;
 		go.anchorMax=new Vector2(urAnch.x/ext.width,urAnch.y/ext.height);
 		Debug.Log(go.anchorMax);
 		go.anchorMin=new Vector2(blAnch.x/ext.width,blAnch.y/ext.height);
 		Debug.Log(go.anchorMin);
-		//go.offsetMax=newOffsetMax;
-		//go.offsetMin=newOffsetMin;
-
+		go.offsetMax=newOffsetMax;
+		go.offsetMin=newOffsetMin;
+		Debug.Log(newOffsetMax);
+		Debug.Log(newOffsetMin);
     }
 }
 public class CardControl : MonoBehaviour {
