@@ -22,7 +22,7 @@ public class Temptest : MonoBehaviour {
 		Debug.Log('\n');
 		List<check1> ch=new List<check1>();
 		ch.Add(new check1());
-		Debug.Log(ch is IList);
+	/*	Debug.Log(ch is IList);
 		foreach(object o in(IList) ch)
 			Debug.Log(o);
 
@@ -32,7 +32,7 @@ public class Temptest : MonoBehaviour {
 		pos=0;
 		Debug.Log(SingleGame.Parser.readParameter("one, two , three)",ref pos,out rt));
 		Debug.Log(SingleGame.Parser.readParameter("one, two , three)",ref pos,out rt));
-		Debug.Log(SingleGame.Parser.readParameter("one, two , three)",ref pos,out rt));
+		Debug.Log(SingleGame.Parser.readParameter("one, two , three)",ref pos,out rt));*/
 	}
 	
 	// Update is called once per frame

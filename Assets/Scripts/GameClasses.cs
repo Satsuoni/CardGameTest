@@ -44,13 +44,39 @@ public class SingleGame
 	public const string _Game="_GAME";
 	public const string _Source="_Source";
 	public static readonly string[] __stackValues={_Game};
+	public const string _template="_template";
+	public const string _cardName="_cardName";
+	public const string _cardText="_cardText";
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
 //hooks
 	delegate void uiHook(params object[] parameters);
 //classes
+	public static string getRandString(int length, float spaceprob=0)
+	{
+		var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+		var stringChars = new char[length];
 
+		for (int i = 0; i < stringChars.Length; i++)
+		{
+			if(Random.value>spaceprob)
+			{
+			stringChars[i] = chars[Random.Range(0,chars.Length)];
+			}
+			else
+				stringChars[i]=' ';
+		}
+		
+		return new string(stringChars);
+	}
+	public static Conditional generateRandomCardTemplate()
+	{
+		Conditional ret=new Conditional();
+		ret[_cardName]=getRandString(5,0);
+		ret[_cardText]=getRandString(25,0.1f);
+		return ret;
+	}
 	public class Conditional
 	{
 		protected Dictionary<string,object> _values;
@@ -177,6 +203,7 @@ public class SingleGame
 	}
 	public class GameManager
 	{
+
 		Conditional _GameData;
 		object locket=new object();
 		Thread gameThread;
@@ -184,37 +211,46 @@ public class SingleGame
 		static GameManager self=null;
 
 		bool _choiceInProgress=false;
+
 		public bool choiceInProgress
 		{
 			get {
 				return _choiceInProgress;
 			}
 		}
+
 		bool _hookInProgress=false;
+
 		public bool isWaiting
 		{
 			get {
 				return _choiceInProgress||_hookInProgress;
 			}
 		}
+
 		public bool hookInProgress
 		{
 			get{return _hookInProgress;}
 		}
+
 		Conditional _hookData;
 		string _hookName=null;
 		public string hookName{ get{return _hookName;}
 		}
+
 		public Conditional hookData
 		{
 			get{return _hookData;}
 		}
+
 		Conditional chosen=null;
 		IList _choiceList;
+
 		public IList choiceList
 		{
 			get{return _choiceList;}
 		}
+
 		void mainGameThread()
 		{
 			IList rulesAndEffects=_GameData[_effects] as IList;
@@ -265,6 +301,7 @@ public class SingleGame
 				}
 			}
 		}
+
 		public static Conditional startChoice(IList objects)
 		{
 			if(self==null||Thread.CurrentThread!=self.gameThread)
@@ -368,6 +405,10 @@ public class SingleGame
 			}
 			self._waitHandle.Set();
 		}
+		public void fillGameData()
+		 {
+			_GameData=new Conditional(); //a test, for now..
+		 }
 		public void Start()
 		{
 			if(self!=null)
@@ -376,6 +417,7 @@ public class SingleGame
 				Debug.Log(string.Format("GameManager not cleared properly...."));
 				#endif
 			}
+			fillGameData();
 			self=this;
 			gameThread=new Thread(mainGameThread);
 			_waitHandle =new AutoResetEvent(false);
