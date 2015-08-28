@@ -11,7 +11,8 @@ public class RectTest : MonoBehaviour {
 		Debug.Log(string.Format("Rect: {0}",tr.rect));
 		Debug.Log(string.Format("AncPos: {0}",tr.anchoredPosition));
 		Debug.Log(string.Format("Rootrec: {0}",tr.RootCanvasRect()));
-		tr.NormalizeScale();
+		Debug.Log(string.Format("Internal: {0}",tr.InternalAnchors()));
+		tr.SetInternalAnchors(new Vector4(0,0,1,1));
 	}
 	
 	// Update is called once per frame
