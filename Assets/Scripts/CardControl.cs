@@ -59,7 +59,7 @@ public static class rtExt
 		Vector4 ret=new Vector4(-go.offsetMin.x/rct.width,-go.offsetMin.y/rct.height,(rct.width-go.offsetMax.x)/rct.width,(rct.height-go.offsetMax.y)/rct.height);
 		return ret;
 	}
-	public static void SetInternalAnchors(this RectTransform go,Vector4 intern)
+	public static void SetInternalAnchors(this RectTransform go,Vector4 intern) //works strangely with layouts
 	{
 		Rect rct=go.rect;
 		Vector2 newOffsetMin=new Vector2(-intern.x*rct.width,-intern.y*rct.height);
@@ -68,21 +68,22 @@ public static class rtExt
 		RectTransform par=go.parent as RectTransform;
 		Rect ext=par.rect;
 		Vector2 urAnch=new Vector2(go.anchorMax.x*ext.size.x,go.anchorMax.y*ext.size.y);
-		Debug.Log((urAnch+go.offsetMax)/ext.height);
-		Debug.Log((urAnch+go.offsetMax)/ext.width);
 		Vector2 blAnch=new Vector2(go.anchorMin.x*ext.size.x,go.anchorMin.y*ext.size.y);
-		Debug.Log((blAnch+go.offsetMin)/ext.height);
 		urAnch+=go.offsetMax-newOffsetMax;
 		blAnch+=go.offsetMin-newOffsetMin;
 		go.anchorMax=new Vector2(urAnch.x/ext.width,urAnch.y/ext.height);
-		Debug.Log(go.anchorMax);
 		go.anchorMin=new Vector2(blAnch.x/ext.width,blAnch.y/ext.height);
-		Debug.Log(go.anchorMin);
 		go.offsetMax=newOffsetMax;
 		go.offsetMin=newOffsetMin;
-		Debug.Log(newOffsetMax);
-		Debug.Log(newOffsetMin);
+
     }
+	public static Vector4 getAnchorsFromCanvasRect(this RectTransform go,Rect rct)
+	{
+		Rect crct = go.RootCanvasRect ();
+		Vector2 dmin = rct.min - crct.min;
+		Vector2 dmax = rct.max - crct.min;
+		return new Vector4(dmin.x/crct.width,dmin.y/crct.height,dmax.x/crct.width,dmax.y/crct.height);
+	}
 }
 public class CardControl : MonoBehaviour {
 

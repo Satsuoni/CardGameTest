@@ -17,6 +17,7 @@ public class RectTest : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	
+		RectTransform tr=gameObject.GetComponent<RectTransform>();
+		Debug.Log (tr.offsetMax);
 	}
 }
