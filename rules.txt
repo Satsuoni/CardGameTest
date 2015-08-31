@@ -1,0 +1,29 @@
+
+1. This is a card battle game, representing a duel between two mages that transform parts of their bodies into weapons.
+
+2. Game area for each player consists of the Body (6? slots: 2 arms, 2 legs, torso, head), Hand with 7 cards, deck, discard pile, energy bar and timeline. In addition, both players share the distance indicator, which can have one of three values: Melee, Midrange and Distant.
+
+3. Energy represents health, as well as resource used to play cards. If it runs out, the player loses.
+
+4. There are two kinds of cards: transformations and abilities. Transformations modify body parts, while abilities directly affect your opponent (or, in rare cases, you).
+
+5. Transformation cards have the following information on them: Their summon cost, maintenance cost (given as energy and the time interval it is applied at), dismissal cost, durability, body parts affected by transformation and ability and effect list. Normally, transformation have no delay before resolution, unless written on the card otherwise. Transformation cards can only be played when the player has enough Energy to pay summon cost and the affected body parts fulfil transformation requirements (see 6).
+
+6. There are two types of Transformation -  base transformation that can only be cast when  affected body part is not transformed and Auras, which do not have durability and can only be cast on transformed body parts.
+
+7. Any card can be one or several of the following Elements: Physical, Dark, Light, Life, Death. The untransformed body is considered to be of Life element.
+
+8. Ability cards normally have the following data on them: ability cost and additional requirements (such as distance), ability delay, body part(s) used for that ability and ability description.
+
+9. Some cards can create permanent effects that affect playing/usage of other cards or trigger periodic events, like Poison. 
+
+10. The gameplay goes as follows: 
+ a) Both players draw 7 cards
+ b) The players cast abilities and transformations in real time. The abilities/transformations that have delay on them are queued in the timeline as Events. Depending on the effects in play, the timeline may advance at a different rate for each player.
+ c) As the timeline reaches queued Events, they are resolved, depending on state of players and effects in play.
+ d) the Events may cause effects to be added into/removed from play and/or deal damage to player's body parts or main Energy pool. If the damage dealt to a transformed body part overcomes the Durability of that transformation, the transformation is automatically Dismissed.
+ e) the gameplay continues until one or both players run out of energy.
+
+11. Dismissal. Any transformation can be Dismissed at will, or it is automatically Dismissed when its Durability runs out. On Dismissal, the Dismissal cost is paid from the player's Energy pool, and the card representing that transformation is returned to hand.
+
+12. Hand. Player's Hand contains 7 cards. If that number becomes less (due to cards being played or ability effects), additional cards are drawn from the deck. If the number becomes more than 7, extra cards are discarded in the order they were drawn (older cards are discarded first). When the deck runs out, the discard pile is shuffled and replaces deck. 

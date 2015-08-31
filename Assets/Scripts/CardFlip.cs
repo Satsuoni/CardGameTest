@@ -4,6 +4,7 @@ public interface IAnimInterface
 {
 	bool isDone{get;}
 	void Run();
+
 }
 public class CardFlip : MonoBehaviour, IAnimInterface {
 
@@ -20,8 +21,14 @@ public class CardFlip : MonoBehaviour, IAnimInterface {
 		//iTween.MoveUpdate
 
 	}
+	public static IAnimInterface Apply(GameObject obj)
+	{
+		CardFlip flp=obj.AddComponent(typeof(CardFlip)) as CardFlip;
+		return flp;
+	}
 	public void Run()
 	{
+		_isDone=false;
 		StartCoroutine(flipCoRoutine());
 	}
 	IEnumerator flipCoRoutine()
