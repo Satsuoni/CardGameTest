@@ -22,6 +22,8 @@ public class GameUIManager : MonoBehaviour {
 	{
 		RectTransform rt=deck.RootCanvasTransform();
 		GameObject crd=Instantiate(card) as GameObject;
+		CardControl crc=crd.GetComponent<CardControl>();
+		crc.cardData=_game.hookData;
 		RectTransform crt=crd.GetComponent<RectTransform>();
 		crt.SetParent(rt,false);
 		crt.SetAsLastSibling();

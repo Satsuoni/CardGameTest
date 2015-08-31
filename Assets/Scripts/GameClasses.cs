@@ -61,6 +61,9 @@ public class SingleGame
 		lock (rnglock) {
 			ret=RNG.Next(from,to);
 		}
+		#if WHATHAPPENS
+		//Debug.Log(string.Format("rnd range: {0} - {1} : {2}",from,to,ret));
+#endif
 		return ret;
 	}
 	public static string getRandString(int length, float spaceprob=0)

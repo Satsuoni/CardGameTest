@@ -90,11 +90,11 @@ public class CardControl : MonoBehaviour {
 	public UnityEngine.UI.Text text;
 	CardFlip flip;
 	// Use this for initialization
-	SingleGame.Conditional cardData;
+	public SingleGame.Conditional cardData;
 
 	void Start () {
 		flip=gameObject.GetComponent<CardFlip>();
-
+		text.text=cardData[SingleGame._cardText] as string;
 
 	}
 	
