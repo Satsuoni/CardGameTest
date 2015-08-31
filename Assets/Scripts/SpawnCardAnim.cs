@@ -5,7 +5,7 @@ public class SpawnCardAnim : MonoBehaviour {
 
 	public RectTransform middle;
 	public RectTransform hand;
-
+	public bool done=false;
 	// Use this for initialization
 	void Start () {
 		StartCoroutine(anim ());
@@ -26,6 +26,7 @@ public class SpawnCardAnim : MonoBehaviour {
 		a1.Run();
 		while(!a1.isDone) yield return null;
 		Destroy(a1 as Component);
+		done=true;
 	}
 	// Update is called once per frame
 	void Update () {

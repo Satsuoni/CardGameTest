@@ -54,7 +54,7 @@ public class RectTransfer : MonoBehaviour, IAnimInterface {
 	public float duration=1.0f;
 	RectTransform from;
 	RectTransform us;
-	Rect start;
+//	Rect start;
 	Rect reference;
 	Vector4 tovec;
 	Vector4 stvec;
@@ -66,7 +66,7 @@ public class RectTransfer : MonoBehaviour, IAnimInterface {
 		from=us.parent as RectTransform;
 		us.SetParent(us.RootCanvasTransform());
 		us.SetInternalAnchors (new Vector4 (0, 0, 1, 1));
-		start=us.rect;
+		//start=us.rect;
 		reference=from.rect;
 		Rect rr = to.RootCanvasRect ();
 		Debug.Log(rr);

@@ -53,6 +53,16 @@ public class SingleGame
 //hooks
 	delegate void uiHook(params object[] parameters);
 //classes
+	public static System.Random RNG=new System.Random();
+	static object rnglock=new object();
+	public static int rngRange(int from, int to)
+	{
+		int ret;
+		lock (rnglock) {
+			ret=RNG.Next(from,to);
+		}
+		return ret;
+	}
 	public static string getRandString(int length, float spaceprob=0)
 	{
 		var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -62,7 +72,7 @@ public class SingleGame
 		{
 			if(Random.value>spaceprob)
 			{
-			stringChars[i] = chars[Random.Range(0,chars.Length)];
+				stringChars[i] = chars[rngRange(0,chars.Length)];
 			}
 			else
 				stringChars[i]=' ';
@@ -204,7 +214,7 @@ public class SingleGame
 	public class GameManager
 	{
 
-		Conditional _GameData;
+		public Conditional _GameData;
 		object locket=new object();
 		Thread gameThread;
 		EventWaitHandle _waitHandle ;
@@ -408,6 +418,49 @@ public class SingleGame
 		public void fillGameData()
 		 {
 			_GameData=new Conditional(); //a test, for now..
+			List<Conditional> deck=new List<Conditional>();
+			for(int i=0;i<30;i++)
+				deck.Add(generateRandomCardTemplate());
+			_GameData["DECK"]=deck;
+			_GameData["HAND"]=new List<Conditional>();
+			List<Conditional> effs=new List<Conditional>();
+			Conditional drawRule=new Conditional();
+			Condition compareto7=new Condition(Condition.Type.LESS,new string[]{_count},7);
+			Condition count=new Condition(Condition.Type.COMPOUND_COUNT,new string[]{_Game+".HAND"},new Condition(Condition.Type.TRUE,new string[]{}),compareto7);
+
+			drawRule[_condition]=count;
+			List<Operation> seq=new List<Operation>();
+			Operation a1=new Operation(Operation.Commands.ANY);
+			List<object> arg1=new List<object>();
+			arg1.Add(_Game+".DECK");
+			arg1.Add("_tmp");
+			a1[_args]=arg1;
+			seq.Add(a1);
+
+			a1=new Operation(Operation.Commands.REMOVE);
+			arg1=new List<object>();
+			arg1.Add(_Game+".DECK");
+			arg1.Add("_tmp");
+			a1[_args]=arg1;
+			seq.Add(a1);
+
+			a1=new Operation(Operation.Commands.HOOK);
+			arg1=new List<object>();
+			arg1.Add("draw");
+			arg1.Add("_tmp");
+			a1[_args]=arg1;
+			seq.Add(a1);
+
+			a1=new Operation(Operation.Commands.PUSH);
+			arg1=new List<object>();
+			arg1.Add(_Game+".HAND");
+			arg1.Add("_tmp");
+			a1[_args]=arg1;
+			seq.Add(a1);
+
+			drawRule[_commands]=seq;
+			effs.Add(drawRule);
+			_GameData[_effects]=effs;
 		 }
 		public void Start()
 		{
@@ -709,7 +762,7 @@ public class SingleGame
 					if(lst.Count>0)
 					{
 
-						stack[retname]=lst[Random.Range(0,lst.Count)];
+						stack[retname]=lst[rngRange(0,lst.Count)];
 
 					}
 				}
@@ -866,7 +919,8 @@ public class SingleGame
 			LESS, //val<cnd.val
 			GREATER,
 			LE,
-			GE
+			GE,
+		    TRUE
 		}
 		public bool inverse;
 		public Type type;
@@ -898,6 +952,7 @@ public class SingleGame
 		}
 		protected bool __isFulfilled(Conditional cnd)
 		{
+					if(type==Type.TRUE) return true;
 			string variable="";
 			if(variables.Length==0) return false;
 			if(variables.Length>1)
