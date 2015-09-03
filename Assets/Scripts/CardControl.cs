@@ -88,12 +88,12 @@ public static class rtExt
 public class CardControl : MonoBehaviour {
 
 	public UnityEngine.UI.Text text;
-	CardFlip flip;
+//	CardFlip flip;
 	// Use this for initialization
 	public SingleGame.Conditional cardData;
 
 	void Start () {
-		flip=gameObject.GetComponent<CardFlip>();
+		//flip=gameObject.GetComponent<CardFlip>();
 		text.text=cardData[SingleGame._cardText] as string;
 
 	}

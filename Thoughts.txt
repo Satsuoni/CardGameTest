@@ -24,7 +24,60 @@ Atomic instruction blocks! _target
  _execute
 type->name-> definition
 
+redefine types? I guess avoid redefining and parametrics for now 
+		
+
+Conditions (do not allow extensions ):
+Usage:
+condition [string name] 
+Internal keywords:
+inverse :- inverts the result. needs var-tapping for numbers? var-tapping: <=
+
+tag <string tag>
+strcomp <string var_name> <string compare_to>
+any <string list_name> <condition applied_to>
+all <string list_name> <condition applied_to>
+count <string list_name> <condition applied_to_list> <condition applied_to_count>
+and {<condition 1>  <condition 2> <condition ...> }
+or {<condition 1>  <condition 2> <condition ...> }
+equal <string var_name> <float number>
+less <string var_name> <float number>
+greater <string var_name> <float number>
+le <string var_name> <float number>
+ge <string var_name> <float number>
+true
 
 
+Operations/commands (target is implicit, stack[_target]):
 
-
+			
+		
+			POP, //get fist and delete
+			PUSH, //put first
+			APPEND, //put last
+			SHIFT,//get last and delete
+			REMOVE,
+			ANY, //get any in list without deleting
+tag_set <string tag>
+tag_switch <string tag_from> <string tag_to>
+set <string var_name> <string object>
+add <string var_name> <float val>
+sub <string var_name> <float val>
+mul <string var_name> <float val>
+div <string var_name> <float val>
+abort
+continue
+return <command return_value>
+foreach <string list_name> {<list of commands>}
+target <condition cond> <string list_name>
+accumulate  <condition cond> <string list_name> <string assign_to>
+clear <string stack_name>
+hook <string hook_name> <string data_name>
+choice <string choice_name> <string list_name> <string ret_name>
+new <string hook_name>
+pop <string list_name> <string ret_value>
+push <string list_name> <string value>
+shift <string list_name> <string ret_value>
+append <string list_name> <string value>
+remove <string list_name> <string stack_name>
+any <string list_name> <string ret_value>

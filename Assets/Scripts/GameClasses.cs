@@ -37,6 +37,7 @@ public class SingleGame
 	public const string _args="_arguments";
 	public const string _effects="_effects";
 	public const string _effect="_effect";
+	public const string _parent="_parent";
 	public const string _condition="_condition";
 	public const string _commands="_commands";
 	public const string _currentCommand="_currentCommand";
@@ -258,7 +259,9 @@ public class SingleGame
 
 		Conditional chosen=null;
 		IList _choiceList;
-
+		string _choiceName;
+		public string choiceName{ get{return _choiceName;}
+		}
 		public IList choiceList
 		{
 			get{return _choiceList;}
@@ -315,7 +318,7 @@ public class SingleGame
 			}
 		}
 
-		public static Conditional startChoice(IList objects)
+		public static Conditional startChoice(string chname,IList objects)
 		{
 			if(self==null||Thread.CurrentThread!=self.gameThread)
 			{
@@ -335,6 +338,7 @@ public class SingleGame
 			{
 				self._choiceInProgress=true;
 				self._choiceList=objects;
+				self._choiceName=chname;
 			}
 			self._waitHandle.WaitOne();
 			Conditional ret=null;
@@ -365,6 +369,7 @@ public class SingleGame
 			lock(self.locket)
 			{
 				self._choiceInProgress=false;
+				self._choiceName=null;
 				self.chosen=retValue;
 			}
 			self._waitHandle.Set();
@@ -428,8 +433,8 @@ public class SingleGame
 			_GameData["HAND"]=new List<Conditional>();
 			List<Conditional> effs=new List<Conditional>();
 			Conditional drawRule=new Conditional();
-			Condition compareto7=new Condition(Condition.Type.LESS,new string[]{_count},7);
-			Condition count=new Condition(Condition.Type.COMPOUND_COUNT,new string[]{_Game+".HAND"},new Condition(Condition.Type.TRUE,new string[]{}),compareto7);
+			Condition compareto7=new Condition(Condition.Type.LESS,_count,7);
+			Condition count=new Condition(Condition.Type.COMPOUND_COUNT,_Game+".HAND",new Condition(Condition.Type.TRUE,""),compareto7);
 
 			drawRule[_condition]=count;
 			List<Operation> seq=new List<Operation>();
@@ -545,6 +550,14 @@ public class SingleGame
 			ret[_Source]=exeffect[_effect];
 			return ret;//TOFIX
 		}
+		static public object deRef(object a, Conditional stack)
+		{
+			if(a is string &&(a as string).StartsWith("<="))
+			{
+				return stack[(a as string).Substring(2)];
+			}
+			return a;
+		}
 		void  __pureExecute(Conditional stack)
 		{
 			if(stack.hasTag(TAG_ABORT)) return;
@@ -560,22 +573,27 @@ public class SingleGame
 					target.setTag(args[1] as string);
 				 }
 			      }break;
-			case Commands.VALUE_SET:{target[args[0] as string]=args[1];}break;
+			case Commands.VALUE_SET:{if(args[1]is string &&(args[1] as string).StartsWith("<="))
+				{
+					target[args[0] as string]=stack[(args[1] as string).Substring(2)];
+				}
+				else
+				target[args[0] as string]=args[1];}break;
 			case Commands.ADD:{
 				object a1=target[args[0] as string];
-				object a2=args[1];
+				object a2=deRef( args[1],stack);
 				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2),a1.GetType());}break;
 			case Commands.SUBTRACT:{
 				object a1=target[args[0] as string];
-				object a2=args[1];
+				object a2=deRef( args[1],stack);
 				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2),a1.GetType());}break;
 			case Commands.MULTIPLY:{
 				object a1=target[args[0] as string];
-				object a2=args[1];
+				object a2=deRef( args[1],stack);
 				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2),a1.GetType());}break;
 			case Commands.DIVIDE:{
 				object a1=target[args[0] as string];
-				object a2=args[1];
+				object a2=deRef( args[1],stack);
 				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2),a1.GetType());}break;
 			case Commands.ABORT:
 			{
@@ -594,7 +612,7 @@ public class SingleGame
 			case Commands.RETURN: //argument :  returned command/operation
 			{
 				stack.setTag(TAG_RETURN);
-				stack[_returnValue]=args[0];
+				stack[_returnValue]=args[0] as Operation;
 			}break;
 			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack args[1]->list of commands
 			{
@@ -776,9 +794,10 @@ public class SingleGame
 				string nmData=args[1] as string;
 				GameManager.startHook(nm,stack[nmData] as Conditional);
 			};break;
-			case Commands.CHOICE: //call for player choice, store result  in arg1: 
+			case Commands.CHOICE: //call for player choice, store result  in arg2: 
 			{
-				string nm=args[0] as string;
+				string chname=args[0] as string;
+				string nm=args[1] as string;
 				IList lst=stack[nm] as IList;
 				if(lst==null)
 				{
@@ -787,8 +806,8 @@ public class SingleGame
 					#endif
 					return;
 				}
-				string nmRet=args[1] as string;
-				Conditional ret=GameManager.startChoice(lst);
+				string nmRet=args[2] as string;
+				Conditional ret=GameManager.startChoice(chname,lst);
 				stack[nmRet]=ret;
 			};break;
 
@@ -928,14 +947,14 @@ public class SingleGame
 		public bool inverse;
 		public Type type;
 		//public Type type_compound;//type to use for compound conditions
-		public string [] variables; //variable name to compare OR tag
+		public string  variables; //variable name to compare OR tag
 		//public string variable_compound;
 		public object [] values;//value(s) to compare to
 		public Condition()
 		{
 			inverse=false;
 		}
-		public Condition(Type t, string  [] var, params object [] val)
+		public Condition(Type t, string   var, params object [] val)
 		{
 			inverse=false;
 			type=t;
@@ -956,8 +975,8 @@ public class SingleGame
 		protected bool __isFulfilled(Conditional cnd)
 		{
 					if(type==Type.TRUE) return true;
-			string variable="";
-			if(variables.Length==0) return false;
+			string variable=variables;
+			/*if(variables.Length==0) return false;
 			if(variables.Length>1)
 			{
 				string [] deeper=new string[variables.Length-1];
@@ -971,7 +990,7 @@ public class SingleGame
 				return deepcond.__isFulfilled(cv);
 			}
 			else
-				variable=variables[0];
+				variable=variables[0];*/
 
 			if(type==Type.TAG)
 				return cnd.hasTag(variable);
@@ -1014,6 +1033,7 @@ public class SingleGame
 					if(cnd2==null) return false;
 					Conditional temp=new Conditional();
 					temp[_count]=cnt;
+					temp[_parent]=cnd;
 					return cnd2.isFulfilled(temp);
 				}
 
@@ -1056,6 +1076,16 @@ public class SingleGame
 			// no good way to compare values, I guess...
 			if(values.Length<1) return false;
 			object val=cnd[variable];
+			object ncmpval=values[0];
+			if(values[0] is string)// try loading it as cnd name?
+			{
+				string st=values[0] as string;
+				if(st!=null&&st.StartsWith("<="))
+				{
+					string vname=st.Substring(2);
+					ncmpval=cnd[vname];
+				}
+			}
 			int cmp=0;
 			if(val==null) return false;
 			System.Type vtp_stupid=val.GetType();
@@ -1066,12 +1096,12 @@ public class SingleGame
 			case System.TypeCode.Int32:
 			case System.TypeCode.Int64:
 			{
-				System.Int64 cndval=System.Convert.ToInt64(values[0]);
+				System.Int64 cndval=System.Convert.ToInt64(ncmpval);
 				System.Int64 cmpval=System.Convert.ToInt64(val);
 				cmp=cmpval.CompareTo(cndval);
 			};break;
 			default:{
-				System.Double cndval=System.Convert.ToDouble(values[0]);
+				System.Double cndval=System.Convert.ToDouble(ncmpval);
 				System.Double cmpval=System.Convert.ToDouble(val);
 				cmp=cmpval.CompareTo(cndval);
 
@@ -1173,6 +1203,12 @@ public class SingleGame
 				res=true;
 				pos++;
 				return "{";//opening brace
+			}
+			if(_txt[pos]=='}')
+			{
+				res=true;
+				pos++;
+				return "}";//closing brace
 			}
 			if(_txt[pos]=='"') //opening quote
 			{
@@ -1317,12 +1353,587 @@ public class SingleGame
 			if(tp=="condition") return new Condition();
 			if(tp
 		}*/
-		public class Parametric //hmm...
+		// Let's avoid parametrics for now...
+		/*public class Parametric //hmm...
 		{
 			public object Resolve(List<object> pars)
 			{
 				return null;
 			}
+		}*/
+		public static Condition readCondition(string _txt,ref int pos,out bool res) //after condition keyword, though not always?
+		{
+			bool result;
+			string vname=null;
+			string first=readString(_txt,ref pos,out result);
+			if(!result)
+			{
+				#if THING
+				Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
+				#endif
+				res=false;
+				return null;
+			}
+			if(first=="condition")
+			{
+				first=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+				#if THING
+				Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
+				#endif
+				res=false;
+				return null;
+				}
+			}
+			if(first=="condition")
+			{
+				#if THING
+				Debug.LogWarning(string.Format("Invalid condition name"));
+				#endif
+				res=false;
+				return null;
+			}
+			if(first!="{")
+			{
+				vname=first;
+				first=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+				#if THING
+				Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
+				#endif
+				res=false;
+				return null;
+				}
+			}
+			Condition ret=null;
+			if(first!="{") //alias
+			{
+				if(_context.ContainsKey(first))
+				{
+				ret=_context[first] as Condition;
+				}
+				else
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Invalid condition alias:  {0} ",first));
+					#endif
+					ret=null;
+				}
+
+			}
+			else
+			{
+				string ltype;
+				bool invert=false;
+				bool tpRead=false;
+				while(!tpRead)
+				{
+				ltype=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Cannot read condition type at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				if(ltype=="inverse")
+					invert=true;
+                else
+					{
+						switch(ltype)
+						{
+						case "tag":{
+							string tagname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read condition type at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							ret=new Condition(Condition.Type.TAG,tagname);
+						 }break;
+						case "true":{
+							ret=new Condition(Condition.Type.TRUE,"");
+						}break;
+						case "strcomp":{
+							string varname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read condition var name at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							string compval=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read condition comp value at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							ret=new Condition(Condition.Type.TAG,varname,compval);
+						}break;
+
+						case "any":{
+							string listname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+
+							string nxtname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							Condition tr;
+							if(nxtname!="condition")
+							{
+								if(!_context.ContainsKey(nxtname))
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
+									#endif
+									res=false;
+									return null;
+								}
+								tr=_context[nxtname] as Condition;
+							}
+							else
+							{
+								tr=readCondition(_txt,ref pos,out result);
+								if(!result)
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+									#endif
+									res=false;
+									return null;
+								}
+							}
+							ret=new Condition(Condition.Type.COMPOUND_ANY,listname,tr);
+						}break;
+									
+						case "all":{
+							string listname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							
+							string nxtname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							Condition tr;
+							if(nxtname!="condition")
+							{
+								if(!_context.ContainsKey(nxtname))
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
+									#endif
+									res=false;
+									return null;
+								}
+								tr=_context[nxtname] as Condition;
+							}
+							else
+							{
+								tr=readCondition(_txt,ref pos,out result);
+								if(!result)
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+									#endif
+									res=false;
+									return null;
+								}
+							}
+							ret=new Condition(Condition.Type.COMPOUND_ALL,listname,tr);
+						}break;
+						case "count":{
+							string listname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							
+							string nxtname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							Condition tr;
+							if(nxtname!="condition")
+							{
+								if(!_context.ContainsKey(nxtname))
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
+									#endif
+									res=false;
+									return null;
+								}
+								tr=_context[nxtname] as Condition;
+							}
+							else
+							{
+								tr=readCondition(_txt,ref pos,out result);
+								if(!result)
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+									#endif
+									res=false;
+									return null;
+								}
+							}
+
+							string ccname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							Condition tr2;
+							if(ccname!="condition")
+							{
+								if(!_context.ContainsKey(ccname))
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",ccname));
+									#endif
+									res=false;
+									return null;
+								}
+								tr2=_context[ccname] as Condition;
+							}
+							else
+							{
+								tr2=readCondition(_txt,ref pos,out result);
+								if(!result)
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+									#endif
+									res=false;
+									return null;
+								}
+							}
+							ret=new Condition(Condition.Type.COMPOUND_COUNT,listname,tr,tr2);
+						}break;
+						case "less":{
+							string varname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							string cmpval=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							ret=new Condition(Condition.Type.LESS,varname,cmpval);
+
+						}break;
+
+						case "equal":{
+							string varname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							string cmpval=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							ret=new Condition(Condition.Type.EQUAL,varname,cmpval);
+							
+						}break;
+						case "greater":{
+							string varname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							string cmpval=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							ret=new Condition(Condition.Type.GREATER,varname,cmpval);
+							
+						}break;
+						case "ge":{
+							string varname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							string cmpval=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							ret=new Condition(Condition.Type.GE,varname,cmpval);
+							
+						}break;
+						case "le":{
+							string varname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							string cmpval=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							ret=new Condition(Condition.Type.LE,varname,cmpval);
+							
+						}break;
+
+						case "and":{
+							string bracket=readString(_txt,ref pos,out result);
+							if(!result||bracket!="{")
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							List<Condition> lst=new List<Condition>();
+							string nxtpos=readString(_txt,ref pos,out result);
+							while(nxtpos!="}")
+							{
+								Condition tr;
+								if(nxtpos!="condition")
+								{
+									if(!_context.ContainsKey(nxtpos))
+									{
+										#if THING
+										Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtpos));
+										#endif
+										res=false;
+										return null;
+									}
+									tr=_context[nxtpos] as Condition;
+								}
+								else
+								{
+									tr=readCondition(_txt,ref pos,out result);
+									if(!result)
+									{
+										#if THING
+										Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+										#endif
+										res=false;
+										return null;
+									}
+								}
+								lst.Add(tr);
+								nxtpos=readString(_txt,ref pos,out result);
+								if(!result)
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+									#endif
+									res=false;
+									return null;
+								}
+							}
+							object [] pars=new object[lst.Count];
+							for(int i=0;i<lst.Count;i++)
+							{
+								pars[i]=lst[i];
+							}
+							ret=new Condition(Condition.Type.MULTI_AND,"_noname", pars);
+							
+						}break;
+						case "or":{
+							string bracket=readString(_txt,ref pos,out result);
+							if(!result||bracket!="{")
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+							List<Condition> lst=new List<Condition>();
+							string nxtpos=readString(_txt,ref pos,out result);
+							while(nxtpos!="}")
+							{
+								Condition tr;
+								if(nxtpos!="condition")
+								{
+									if(!_context.ContainsKey(nxtpos))
+									{
+										#if THING
+										Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtpos));
+										#endif
+										res=false;
+										return null;
+									}
+									tr=_context[nxtpos] as Condition;
+								}
+								else
+								{
+									tr=readCondition(_txt,ref pos,out result);
+									if(!result)
+									{
+										#if THING
+										Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+										#endif
+										res=false;
+										return null;
+									}
+								}
+								lst.Add(tr);
+								nxtpos=readString(_txt,ref pos,out result);
+								if(!result)
+								{
+									#if THING
+									Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+									#endif
+									res=false;
+									return null;
+								}
+							}
+							object [] pars=new object[lst.Count];
+							for(int i=0;i<lst.Count;i++)
+							{
+								pars[i]=lst[i];
+							}
+							ret=new Condition(Condition.Type.MULTI_OR,"_noname", pars);
+							
+						}break;
+							/*
+
+and {<condition 1>  <condition 2> <condition ...> }
+or {<condition 1>  <condition 2> <condition ...> }
+
+*/
+						default:
+						{
+							#if THING
+							Debug.LogWarning(string.Format("Invalid condition type: {0} ",ltype));
+							#endif
+							res=false;
+							return null;
+						}
+
+						}
+						tpRead=true;
+
+					}
+				}
+				ret.inverse=invert;
+				while(first!="}")
+				{
+					first=readString(_txt,ref pos,out result);
+					if(!result)
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Condition definition not closed with {} properly",pos));
+						#endif
+						res=false;
+						return null;
+					}
+				}
+			}
+			if(vname!=null)
+			{
+				if(_context.ContainsKey(vname))
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Duplicate condition name:  {0} ",vname));
+					#endif
+				}
+				_context[vname]=ret;
+			}
+			if(ret!=null) {res=true;}
+			else res=false;
+			return ret;
 		}
 		public static object readDefinition(string _txt,ref int pos,out bool res)
 		{
@@ -1391,7 +2002,7 @@ public class SingleGame
 					return null;
 				}
 				object alias=_context[def];
-				if(alias is Parametric)
+				/*if(alias is Parametric)
 				{
 					def=readString(_txt,ref pos,out result);
 					if(!result||def[0]!='(')
@@ -1405,7 +2016,7 @@ public class SingleGame
 					pos=pos-def.Length+1;
 
 				}
-				else
+				else*/
 				{
 					ret=alias;
 				}

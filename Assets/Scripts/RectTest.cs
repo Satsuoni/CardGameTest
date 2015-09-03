@@ -7,6 +7,10 @@ public class RectTest : MonoBehaviour {
 	void Start () {
 		RectTransform tr=gameObject.GetComponent<RectTransform>();
 		if(tr==null) return;
+		string st="condition countHand {  and{ condition { true } condition { less _count 7 } condition { greater _count 7 }  }}";
+		int pos=0;
+		bool res=false;
+		SingleGame.Condition cnd=SingleGame.Parser.readCondition(st,ref pos,out res);
 		//Debug.Log(SingleGame.getRandString(20,0.1f));
 		Debug.Log(string.Format("Rect: {0}",tr.rect));
 		Debug.Log(string.Format("AncPos: {0}",tr.anchoredPosition));
