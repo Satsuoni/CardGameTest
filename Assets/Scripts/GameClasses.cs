@@ -42,7 +42,7 @@ public class SingleGame
 	public const string _commands="_commands";
 	public const string _currentCommand="_currentCommand";
 	public const string _returnValue="_returnValue";
-	public const string _Game="_GAME";
+	public const string _Game="_Game";
 	public const string _Source="_Source";
 	public static readonly string[] __stackValues={_Game};
 	public const string _template="_template";
@@ -50,6 +50,7 @@ public class SingleGame
 	public const string _cardText="_cardText";
 	public const string _dr="<=";
 	public const int _drl=2;
+  public const string _parentl="<--|";
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
@@ -214,12 +215,1755 @@ public class SingleGame
 		{
 			_tags.Remove(tag);
 		}
+    //////////////Parser area
+    ///
+    object getFromContext(string id)
+    {
+      Conditional chk=this;
+      while(chk!=null)
+      {
+        if(chk[id]!=null) return chk[id];
+        chk=chk[_parentl] as Conditional;
+      }
+      return null;
+    }
+    public static Conditional loadFromString(string _txt)
+    {
+      int pos=0;
+      Conditional ret=new Conditional();
+      if(!ret.readInternalList(_txt+"}",ref pos))
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Couldn't load consitional from string :{0} ",_txt));
+        #endif
+        return null;
+      }
+      return ret;
+    }
+    bool readInternalList(string _txt,ref int pos)
+    {
+      bool result;
+      string first;
+      while(true)
+      {
+      first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Invalid syntax in conditional at pos: {0} ",pos));
+          #endif
+          return false;
+        }
+        if(first=="}") break;
+        switch(first)
+        {
+        case "int":
+        {
+          string nm=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          string val=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          int pval=0;
+          if(!int.TryParse(val,out pval))
+          {
+            object vl=getFromContext(val);
+            if(vl!=null&&vl is int)
+            {
+              this[nm]=(int)vl;
+            }
+            else
+            {
+              #if THING
+              Debug.LogWarning(string.Format("Invalid int value: {0} ",val));
+              #endif
+              return false;
+            }
+          }
+          else
+          {
+            this[nm]=pval;
+          }
+        }break;
+        case "float":
+        {
+          string nm=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          string val=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          float pval=0;
+          if(!float.TryParse(val,out pval))
+          {
+            object vl=getFromContext(val);
+            if(vl!=null&&vl is float)
+            {
+              this[nm]=(float)vl;
+            }
+            else
+            {
+              #if THING
+              Debug.LogWarning(string.Format("Invalid float value: {0} ",val));
+              #endif
+              return false;
+            }
+          }
+          else
+          {
+            this[nm]=pval;
+          }
+        }break;
+        case "string":
+        {
+          string nm=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          string val=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+         
+          if(val.StartsWith(_dr))
+          {
+            object vl=getFromContext(val.Substring(_drl));
+            if(vl!=null&&vl is string)
+            {
+              this[nm]=(string)vl;
+            }
+            else
+            {
+              #if THING
+              Debug.LogWarning(string.Format("Invalid string ref : {0} ",val));
+              #endif
+              return false;
+            }
+          }
+          else
+          {
+            this[nm]=val;
+          }
+        }break;
+        case "conditional":
+        {
+          readConditional(_txt,ref pos,out result); 
+          if(!result) return false;
+        }break;
+				case "function":
+				{
+					readFunction(_txt,ref pos,out result); 
+					if(!result) return false;
+				}break;
+        case "condition":
+        {
+          readCondition(_txt,ref pos,out result); 
+          if(!result) return false;
+        }break;
+        }
+      }
+      return true;
+    }
+    public Conditional readConditional (string _txt,ref int pos,out bool res)
+    {
+      bool result;
+      string vname=null;
+      string first=readString(_txt,ref pos,out result);
+      if(!result)
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Cannot read conditional in string at pos: {0} ",pos));
+        #endif
+        res=false;
+        return null;
+      }
+      if(first=="conditional")
+      {
+        first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read conditional in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      if(first=="conditional")
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Invalid conditional name"));
+        #endif
+        res=false;
+        return null;
+      }
+      Conditional ret=null;
+      if(first!="{")
+      {
+        vname=first;
+        first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read conditional in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      if(first!="{") //alias
+      {
+        ret=getFromContext(first) as Conditional;
+        if(ret==null)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read function in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read conditional in string at pos: {0}, invalid syntax",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        ret=ret.duplicate();
+      }
+      if(first!="{") //rollback...
+      {
+        pos=pos-first.Length;
+        if(ret!=null) res=true;
+        else res=false;
+        return ret;
+      }
+      else
+      {
+        if(ret==null)
+          ret=new Conditional();
+        ret[_parentl]=this;
+        if(!ret.readInternalList(_txt,ref pos))
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read conditional in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      if(vname!=null)
+      {
+        if(this[vname]!=null)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Duplicate conditional name:  {0} ",vname));
+          #endif
+        }
+        this[vname]=ret;
+      }
+      
+      if(ret!=null) res=true;
+      else res=false;
+      return ret;
+    }
+    public List<Operation> readFunction(string _txt,ref int pos,out bool res) //after function keyword, though not always?
+    {
+      bool result;
+      string vname=null;
+      string first=readString(_txt,ref pos,out result);
+      if(!result)
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Cannot read function in string at pos: {0} ",pos));
+        #endif
+        res=false;
+        return null;
+      }
+      if(first=="function")
+      {
+        first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read function in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      if(first=="function")
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Invalid function name"));
+        #endif
+        res=false;
+        return null;
+      }
+      List<Operation> ret=null;
+      if(first!="{")
+      {
+        vname=first;
+        first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read function in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      if(first!="{") //alias
+      {
+        ret=getFromContext(first) as List<Operation>;
+        if(ret==null)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read function in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      else
+      {
+        ret=readOperationList(_txt,ref pos, out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read function in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      if(vname!=null)
+      {
+        if(this[vname]!=null)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Duplicate function name:  {0} ",vname));
+          #endif
+        }
+        this[vname]=ret;
+      }
+
+      if(ret!=null) res=true;
+      else res=false;
+      return ret;
+    }
+
+    public  Condition readCondition(string _txt,ref int pos,out bool res) //after condition keyword, though not always?
+    {
+      bool result;
+      string vname=null;
+      string first=readString(_txt,ref pos,out result);
+      if(!result)
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
+        #endif
+        res=false;
+        return null;
+      }
+      if(first=="condition")
+      {
+        first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      if(first=="condition")
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Invalid condition name"));
+        #endif
+        res=false;
+        return null;
+      }
+      if(first!="{")
+      {
+        vname=first;
+        first=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+      }
+      Condition ret=null;
+      if(first!="{") //alias
+      {
+        ret=getFromContext(first) as Condition;
+        if(ret==null)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Invalid condition alias:  {0} ",first));
+          #endif
+          ret=null;
+        }
+        
+      }
+      else
+      {
+        string ltype;
+        bool invert=false;
+        bool tpRead=false;
+        while(!tpRead)
+        {
+          ltype=readString(_txt,ref pos,out result);
+          if(!result)
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Cannot read condition type at pos: {0} ",pos));
+            #endif
+            res=false;
+            return null;
+          }
+          if(ltype=="inverse")
+            invert=true;
+          else
+          {
+            switch(ltype)
+            {
+            case "tag":{
+              string tagname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.TAG,tagname);
+            }break;
+            case "true":{
+              ret=new Condition(Condition.Type.TRUE,"");
+            }break;
+            case "strcomp":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition var name at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string compval=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition comp value at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.TAG,varname,compval);
+            }break;
+              
+            case "any":{
+              string listname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              
+              string nxtname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              Condition tr;
+              if(nxtname!="condition")
+              {
+                tr=getFromContext(nxtname) as Condition;
+                if(tr==null)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
+                  #endif
+                  res=false;
+                  return null;
+                }
+               
+              }
+              else
+              {
+                tr=readCondition(_txt,ref pos,out result);
+                if(!result)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+              }
+              ret=new Condition(Condition.Type.COMPOUND_ANY,listname,tr);
+            }break;
+              
+            case "all":{
+              string listname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              
+              string nxtname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              Condition tr;
+              if(nxtname!="condition")
+              {
+                tr=getFromContext(nxtname) as Condition;
+                if(tr==null)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
+                  #endif
+                  res=false;
+                  return null;
+                }
+               
+              }
+              else
+              {
+                tr=readCondition(_txt,ref pos,out result);
+                if(!result)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+              }
+              ret=new Condition(Condition.Type.COMPOUND_ALL,listname,tr);
+            }break;
+            case "count":{
+              string listname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              
+              string nxtname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              Condition tr;
+              if(nxtname!="condition")
+              {
+                tr=getFromContext(nxtname) as Condition;
+                if(tr==null)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
+                  #endif
+                  res=false;
+                  return null;
+                }
+               
+              }
+              else
+              {
+                tr=readCondition(_txt,ref pos,out result);
+                if(!result)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+              }
+              
+              string ccname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              Condition tr2;
+              if(ccname!="condition")
+              {
+                tr2=getFromContext(ccname) as Condition;
+                if(tr2==null)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition name:  {0} ",ccname));
+                  #endif
+                  res=false;
+                  return null;
+                }
+
+              }
+              else
+              {
+                tr2=readCondition(_txt,ref pos,out result);
+                if(!result)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+              }
+              ret=new Condition(Condition.Type.COMPOUND_COUNT,listname,tr,tr2);
+            }break;
+            case "less":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string cmpval=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.LESS,varname,cmpval);
+              
+            }break;
+              
+            case "equal":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string cmpval=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.EQUAL,varname,cmpval);
+              
+            }break;
+            case "greater":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string cmpval=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.GREATER,varname,cmpval);
+              
+            }break;
+            case "ge":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string cmpval=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.GE,varname,cmpval);
+              
+            }break;
+            case "le":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string cmpval=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.LE,varname,cmpval);
+              
+            }break;
+              
+            case "and":{
+              string bracket=readString(_txt,ref pos,out result);
+              if(!result||bracket!="{")
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              List<Condition> lst=new List<Condition>();
+              string nxtpos=readString(_txt,ref pos,out result);
+              while(nxtpos!="}")
+              {
+                Condition tr;
+              
+                if(nxtpos!="condition")
+                {
+                  tr=getFromContext(nxtpos) as Condition;
+                  if(tr==null)
+                  {
+                    #if THING
+                    Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtpos));
+                    #endif
+                    res=false;
+                    return null;
+                  }
+                 
+                }
+                else
+                {
+                  tr=readCondition(_txt,ref pos,out result);
+                  if(!result)
+                  {
+                    #if THING
+                    Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+                    #endif
+                    res=false;
+                    return null;
+                  }
+                }
+                lst.Add(tr);
+                nxtpos=readString(_txt,ref pos,out result);
+                if(!result)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+              }
+              object [] pars=new object[lst.Count];
+              for(int i=0;i<lst.Count;i++)
+              {
+                pars[i]=lst[i];
+              }
+              ret=new Condition(Condition.Type.MULTI_AND,"_noname", pars);
+              
+            }break;
+            case "or":{
+              string bracket=readString(_txt,ref pos,out result);
+              if(!result||bracket!="{")
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              List<Condition> lst=new List<Condition>();
+              string nxtpos=readString(_txt,ref pos,out result);
+              while(nxtpos!="}")
+              {
+                Condition tr;
+                if(nxtpos!="condition")
+                {
+                  tr=getFromContext(nxtpos) as Condition;
+                  if(tr==null)
+                  {
+                    #if THING
+                    Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtpos));
+                    #endif
+                    res=false;
+                    return null;
+                  }
+
+                }
+                else
+                {
+                  tr=readCondition(_txt,ref pos,out result);
+                  if(!result)
+                  {
+                    #if THING
+                    Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+                    #endif
+                    res=false;
+                    return null;
+                  }
+                }
+                lst.Add(tr);
+                nxtpos=readString(_txt,ref pos,out result);
+                if(!result)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+              }
+              object [] pars=new object[lst.Count];
+              for(int i=0;i<lst.Count;i++)
+              {
+                pars[i]=lst[i];
+              }
+              ret=new Condition(Condition.Type.MULTI_OR,"_noname", pars);
+              
+            }break;
+              
+            default:
+            {
+              #if THING
+              Debug.LogWarning(string.Format("Invalid condition type: {0} ",ltype));
+              #endif
+              res=false;
+              return null;
+            }
+              
+            }
+            tpRead=true;
+            
+          }
+        }
+        ret.inverse=invert;
+        while(first!="}")
+        {
+          first=readString(_txt,ref pos,out result);
+          if(!result)
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Condition definition not closed with {} properly",pos));
+            #endif
+            res=false;
+            return null;
+          }
+        }
+      }
+      if(vname!=null)
+      {
+        if(this[vname]!=null)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Duplicate condition name:  {0} ",vname));
+          #endif
+        }
+       this[vname]=ret;
+      }
+      if(ret!=null) {res=true;}
+      else res=false;
+      return ret;
+    }
+
+    public  Operation readOperation(string _txt,ref int pos,out bool res)
+    {
+      bool result;
+      string kind=readString(_txt,ref pos,out result);
+      if(!result)
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Cannot read operation in string at pos: {0} ",pos));
+        #endif
+        res=false;
+        return null;
+      }
+      if (kind == "}") //end of operation list
+      {
+        res=true;
+        return null;
+      }
+      Operation ret=null;
+      List<object> args=new List<object>();
+      switch (kind)
+      {
+      case "tag_set":{
+        string tag=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(tag);
+        ret=new Operation(Operation.Commands.TAG_SET);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "tag_switch":{
+        string tag_from=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string tag_to=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(tag_from);
+        args.Add(tag_to);
+        ret=new Operation(Operation.Commands.TAG_SWITCH);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "set":{
+        string settarg=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string tag_to=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(settarg);
+        args.Add(tag_to);
+        ret=new Operation(Operation.Commands.VALUE_SET);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "add":{
+        string settarg=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string tag_to=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(settarg);
+        if(tag_to.StartsWith(_dr))
+        {
+          args.Add(tag_to);
+        }
+        else
+        {
+          float np=0;
+          if(!float.TryParse(tag_to,out np))
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+            #endif
+            res=false;
+            return null;
+          }
+          args.Add(np);
+        }
+        ret=new Operation(Operation.Commands.ADD);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "sub":{
+        string settarg=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string tag_to=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(settarg);
+        if(tag_to.StartsWith(_dr))
+        {
+          args.Add(tag_to);
+        }
+        else
+        {
+          float np=0;
+          if(!float.TryParse(tag_to,out np))
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+            #endif
+            res=false;
+            return null;
+          }
+          args.Add(np);
+        }
+        ret=new Operation(Operation.Commands.SUBTRACT);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "mul":{
+        string settarg=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string tag_to=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(settarg);
+        if(tag_to.StartsWith(_dr))
+        {
+          args.Add(tag_to);
+        }
+        else
+        {
+          float np=0;
+          if(!float.TryParse(tag_to,out np))
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+            #endif
+            res=false;
+            return null;
+          }
+          args.Add(np);
+        }
+        ret=new Operation(Operation.Commands.MULTIPLY);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "div":{
+        string settarg=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string tag_to=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(settarg);
+        if(tag_to.StartsWith(_dr))
+        {
+          args.Add(tag_to);
+        }
+        else
+        {
+          float np=0;
+          if(!float.TryParse(tag_to,out np))
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+            #endif
+            res=false;
+            return null;
+          }
+          args.Add(np);
+        }
+        ret=new Operation(Operation.Commands.DIVIDE);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "abort":
+      {
+        ret=new Operation(Operation.Commands.ABORT);
+        res=true;
+        return ret;
+      }
+      case "continue":
+      {
+        ret=new Operation(Operation.Commands.CONTINUE);
+        res=true;
+        return ret;
+      }
+        
+      case "return":
+      {
+        Operation retval=readOperation(_txt,ref pos,out result);
+        if(!result||retval==null)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read returned command  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(retval);
+        ret=new Operation(Operation.Commands.RETURN);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "foreach":
+      {
+        string listval=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach list  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string ob=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(ob!="{")
+        {
+          #if THING
+          Debug.LogWarning(string.Format("No opening bracket, this: {0} ",ob));
+          #endif
+          res=false;
+          return null;
+        }
+        List<Operation> lst=readOperationList(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach operations at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(listval);
+        args.Add(lst);
+        ret=new Operation(Operation.Commands.FOREACH);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "target":
+      {
+        string condname=readString(_txt,ref pos,out result);
+        Condition a1=null;
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read target condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(condname=="condition")
+        {
+          a1=readCondition(_txt,ref pos,out result);
+          if(!result){
+            #if THING
+            Debug.LogWarning(string.Format("Couldn't read target cond  at pos: {0} ",pos));
+            #endif
+            res=false;
+            return null;}
+          
+        }
+        else
+        {
+          a1=getFromContext(condname) as Condition;
+          if(a1==null)
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+            #endif
+            res=false;
+            return null;
+          }
+      
+        }
+        args.Add(a1);
+        string listname=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read target list at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(listname);
+        
+        ret=new Operation(Operation.Commands.TARGET);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "accumulate":
+      {
+        string condname=readString(_txt,ref pos,out result);
+        Condition a1=null;
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(condname=="condition")
+        {
+          a1=readCondition(_txt,ref pos,out result);
+          if(!result){
+            #if THING
+            Debug.LogWarning(string.Format("Couldn't read accumulate cond  at pos: {0} ",pos));
+            #endif
+            res=false;
+            return null;}
+          
+        }
+        else
+        {
+          a1=getFromContext(condname) as Condition;
+          if(a1==null)
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+            #endif
+            res=false;
+            return null;
+          }
+        
+        }
+        args.Add(a1);
+        string listname=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate list at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(listname);
+        string assignname=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate targ list at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(assignname);
+        ret=new Operation(Operation.Commands.ACCUMULATE);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "clear":
+      {
+        string valname=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(valname);
+        ret=new Operation(Operation.Commands.CLEAR);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "hook":
+      {
+        string hookname=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(hookname);
+        string dataname=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(dataname);
+        ret=new Operation(Operation.Commands.HOOK);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+        
+      case "choice":
+      {
+        string choice_name=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(choice_name);
+        string list_name=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(list_name);
+        string ret_name=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(ret_name);
+        ret=new Operation(Operation.Commands.CHOICE);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "new":
+      {
+        string var_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(var_name);
+        
+        ret=new Operation(Operation.Commands.NEW);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "pop":
+      {
+        string list_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(list_name);
+        string vn=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(vn);
+        ret=new Operation(Operation.Commands.POP);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "push":
+      {
+        string list_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(list_name);
+        string vn=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(vn);
+        ret=new Operation(Operation.Commands.PUSH);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "shift":
+      {
+        string list_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(list_name);
+        string vn=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(vn);
+        ret=new Operation(Operation.Commands.SHIFT);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "append":
+      {
+        string list_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(list_name);
+        string vn=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(vn);
+        ret=new Operation(Operation.Commands.APPEND);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "remove":
+      {
+        string list_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(list_name);
+        string vn=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(vn);
+        ret=new Operation(Operation.Commands.REMOVE);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case "any":
+      {
+        string list_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(list_name);
+        string vn=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(vn);
+        ret=new Operation(Operation.Commands.ANY);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+        
+      default:
+      {
+        #if THING
+        Debug.LogWarning(string.Format("Invalid command name at pos: {0} ",pos));
+        #endif
+        res=false;
+        return null;
+      }
+      }
+    }
+    public  List<Operation> readOperationList(string _txt,ref int pos,out bool res)
+    {
+      List<Operation> ret=new List<Operation>();
+      bool result;
+      while(true)
+      {
+        Operation rd=readOperation(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Cannot read operation in string at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(rd==null) break;
+        ret.Add(rd);
+      }
+      
+      res=true;
+      return ret;
+    }
+
+    public  string readString(string _txt,ref int pos,out bool res)
+    {
+      //skip whitespace
+      while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
+      res=true;
+      if(pos==_txt.Length) 
+      {
+        #if THING
+        Debug.LogWarning("no string encountered until end of file");
+        #endif
+        res=false;
+        return null;
+      }
+      StringBuilder ret=new StringBuilder();
+      if(_txt[pos]=='{')
+      {
+        res=true;
+        pos++;
+        return "{";//opening brace
+      }
+      if(_txt[pos]=='}')
+      {
+        res=true;
+        pos++;
+        return "}";//closing brace
+      }
+      if(_txt[pos]=='"') //opening quote
+      {
+        pos++;
+        while(pos<_txt.Length&&_txt[pos]!='"')
+        {
+          if(_txt[pos]!='\\')
+            ret.Append(_txt[pos]);
+          else
+          {
+            pos++;
+            if(pos<_txt.Length) ret.Append(_txt[pos]);
+          }
+          pos++;
+        }
+        if(pos==_txt.Length)
+        {
+          #if THING
+          Debug.LogWarning("no end quote encountered");
+          #endif
+          res=false;
+          return null;
+        }
+        pos++;
+        return ret.ToString();
+      } // end quote
+      while(pos<_txt.Length&&!char.IsWhiteSpace(_txt[pos])&&_txt[pos]!='('&&_txt[pos]!='{') 
+      {
+        ret.Append(_txt[pos]);
+        pos++;
+      }
+      return ret.ToString();
+    }
+
 	}
 	public class GameManager
 	{
 
 		public Conditional _GameData;
 		object locket=new object();
+		bool runThread=false;
 		Thread gameThread;
 		EventWaitHandle _waitHandle ;
 		static GameManager self=null;
@@ -285,17 +2029,19 @@ public class SingleGame
 			stack[_target]=null;
 
 
-			while(true)
+			while(runThread)
 			{
 				foreach(object obj in rulesAndEffects)
 				{
 					Conditional eff=obj as Conditional;
+
 					if(!eff.hasTag(EXECUTE_PREFIX)&&!eff.hasTag(EXECUTE_POSTFIX))
 					{
 						Condition cnd=eff[_condition] as Condition;
-
+						//Debug.Log(cnd);
 						if(cnd.isFulfilled(stack))
 						{
+							Debug.Log(cnd);
 							Operation op=new Operation(Operation.Commands.NEW);
 							Conditional nstack=op.createStack(stack, eff);
 							op.executeList(eff[_commands], nstack);
@@ -366,6 +2112,12 @@ public class SingleGame
 			}
 			self._waitHandle.Set();
 		}
+		public static void STOP()
+		{
+      self.runThread=false;
+			self.gameThread.Abort();
+
+		}
 		public static void startHook(string hName, Conditional hookData)
 		{
 			if(self==null||Thread.CurrentThread!=self.gameThread)
@@ -417,15 +2169,20 @@ public class SingleGame
 		}
 		public void fillGameData()
 		{
-			_GameData=new Conditional(); //a test, for now..
+			TextAsset ass=Resources.Load("draw") as TextAsset;
+			_GameData=Conditional.loadFromString(ass.text); //a test, for now..
 			List<Conditional> deck=new List<Conditional>();
 			for(int i=0; i<30; i++)
 				deck.Add(generateRandomCardTemplate());
 			_GameData["DECK"]=deck;
 			_GameData["HAND"]=new List<Conditional>();
 			List<Conditional> effs=new List<Conditional>();
-			Conditional drawRule=new Conditional();
-			Condition compareto7=new Condition(Condition.Type.LESS, _count, 7);
+			Conditional drawRule=_GameData["drawRule"] as Conditional;
+			Debug.Log(drawRule);
+			Debug.Log(drawRule[_commands]);
+			Debug.Log(drawRule[_condition]);
+			// new Conditional();
+			/*Condition compareto7=new Condition(Condition.Type.LESS, _count, 7);
 			Condition count=new Condition(Condition.Type.COMPOUND_COUNT, _Game+".HAND", new Condition(Condition.Type.TRUE, ""), compareto7);
 
 			drawRule[_condition]=count;
@@ -458,7 +2215,7 @@ public class SingleGame
 			a1[_args]=arg1;
 			seq.Add(a1);
 
-			drawRule[_commands]=seq;
+			drawRule[_commands]=seq;*/
 			effs.Add(drawRule);
 			_GameData[_effects]=effs;
 		}
@@ -472,6 +2229,7 @@ public class SingleGame
 			}
 			fillGameData();
 			self=this;
+      runThread=true;
 			gameThread=new Thread(mainGameThread);
 			_waitHandle=new AutoResetEvent(false);
 			gameThread.Start();
@@ -1027,6 +2785,7 @@ public class SingleGame
 		}
 		protected bool __isFulfilled(Conditional cnd)
 		{
+
 			if(type==Type.TRUE)
 				return true;
 			string variable=variables;
@@ -1059,10 +2818,13 @@ public class SingleGame
 			}
 			if(type==Type.COMPOUND_ALL||type==Type.COMPOUND_ANY||type==Type.COMPOUND_COUNT) //compounds! EW
 			{
+
 				if(values.Length<1)
 					return false;
+       
 				if(values.Length<2&&type==Type.COMPOUND_COUNT)
 					return false;
+      
 				Condition compcond=values[0] as Condition;
 				if(compcond==null)
 				{
@@ -1072,6 +2834,7 @@ public class SingleGame
 					return false;
 				}
 				object cval=cnd[variable];
+       
 				if(!(cval is IList))
 					return false;
 				List<Conditional> ccnds=cval as List<Conditional>;
@@ -1094,6 +2857,8 @@ public class SingleGame
 					return false;
 				if(type==Type.COMPOUND_COUNT)
 				{
+          //Debug.Log("Count!!");
+         // Debug.Log(variables);
 					Condition cnd2=values[1] as Condition;
 					if(cnd2==null)
 						return false;
@@ -1275,66 +3040,8 @@ public class SingleGame
 			_text=txt;
 			rpos=0;
 		}
-		public static string readString(string _txt,ref int pos,out bool res)
-		{
-			//skip whitespace
-			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
-			res=true;
-			if(pos==_txt.Length) 
-			{
-                #if THING
-				Debug.LogWarning("no string encountered until end of file");
-				#endif
-				res=false;
-				return null;
-			}
-			StringBuilder ret=new StringBuilder();
-			if(_txt[pos]=='{')
-			{
-				res=true;
-				pos++;
-				return "{";//opening brace
-			}
-			if(_txt[pos]=='}')
-			{
-				res=true;
-				pos++;
-				return "}";//closing brace
-			}
-			if(_txt[pos]=='"') //opening quote
-			{
-				pos++;
-				while(pos<_txt.Length&&_txt[pos]!='"')
-				{
-					if(_txt[pos]!='\\')
-					ret.Append(_txt[pos]);
-					else
-					{
-						pos++;
-						if(pos<_txt.Length) ret.Append(_txt[pos]);
-					}
-					pos++;
-				}
-				if(pos==_txt.Length)
-				{
-					#if THING
-					Debug.LogWarning("no end quote encountered");
-					#endif
-					res=false;
-					return null;
-				}
-				pos++;
-				return ret.ToString();
-			} // end quote
-			while(pos<_txt.Length&&!char.IsWhiteSpace(_txt[pos])&&_txt[pos]!='('&&_txt[pos]!='{') 
-			{
-				ret.Append(_txt[pos]);
-				pos++;
-			}
-			return ret.ToString();
-		}
-
-		public static string readParameter(string _txt,ref int pos,out bool res)
+	
+	/*	public static string readParameter(string _txt,ref int pos,out bool res)
 		{
 			//skip whitespace
 			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
@@ -1414,9 +3121,9 @@ public class SingleGame
 			return ret.ToString();
 
 
-		}
+		}*/
 
-		public static T readTypeCast<T>(string _txt,ref int pos,out bool res)
+		/*public static T readTypeCast<T>(string _txt,ref int pos,out bool res)
 		{
 			bool strd=false;
 			string rstr=readString(_txt,ref pos,out strd);
@@ -1438,1364 +3145,9 @@ public class SingleGame
 			
 			return (T)ret;
 
-		}
-		/*public static object getPrototypeFromString(string tp)
-		{
-			if(tp=="condition") return new Condition();
-			if(tp
 		}*/
-		// Let's avoid parametrics for now...
-		/*public class Parametric //hmm...
-		{
-			public object Resolve(List<object> pars)
-			{
-				return null;
-			}
-		}*/
-		public static List<Operation> readOperationList(string _txt,ref int pos,out bool res)
-		{
-			List<Operation> ret=new List<Operation>();
-			bool result;
-			while(true)
-			{
-				Operation rd=readOperation(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Cannot read operation in string at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				if(rd==null) break;
-				ret.Add(rd);
-			}
 
-			res=true;
-			return ret;
-		}
-		public static Operation readOperation(string _txt,ref int pos,out bool res)
-		{
-			bool result;
-			string kind=readString(_txt,ref pos,out result);
-			if(!result)
-			{
-				#if THING
-				Debug.LogWarning(string.Format("Cannot read operation in string at pos: {0} ",pos));
-				#endif
-				res=false;
-				return null;
-			}
-			if (kind == "}") //end of operation list
-			{
-				res=true;
-				return null;
-			}
-			Operation ret=null;
-			List<object> args=new List<object>();
-			switch (kind)
-			{
-			case "tag_set":{
-				string tag=readString(_txt,ref pos,out result);
-
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(tag);
-				ret=new Operation(Operation.Commands.TAG_SET);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "tag_switch":{
-				string tag_from=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				string tag_to=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(tag_from);
-				args.Add(tag_to);
-				ret=new Operation(Operation.Commands.TAG_SWITCH);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "set":{
-				string settarg=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				string tag_to=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(settarg);
-				args.Add(tag_to);
-				ret=new Operation(Operation.Commands.VALUE_SET);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "add":{
-				string settarg=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				string tag_to=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(settarg);
-				if(tag_to.StartsWith(_dr))
-				{
-				args.Add(tag_to);
-				}
-				else
-				{
-					float np=0;
-					if(!float.TryParse(tag_to,out np))
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
-						#endif
-						res=false;
-						return null;
-					}
-					args.Add(np);
-				}
-				ret=new Operation(Operation.Commands.ADD);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "sub":{
-				string settarg=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				string tag_to=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(settarg);
-				if(tag_to.StartsWith(_dr))
-				{
-					args.Add(tag_to);
-				}
-				else
-				{
-					float np=0;
-					if(!float.TryParse(tag_to,out np))
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
-						#endif
-						res=false;
-						return null;
-					}
-					args.Add(np);
-				}
-				ret=new Operation(Operation.Commands.SUBTRACT);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "mul":{
-				string settarg=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				string tag_to=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(settarg);
-				if(tag_to.StartsWith(_dr))
-				{
-					args.Add(tag_to);
-				}
-				else
-				{
-					float np=0;
-					if(!float.TryParse(tag_to,out np))
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
-						#endif
-						res=false;
-						return null;
-					}
-					args.Add(np);
-				}
-				ret=new Operation(Operation.Commands.MULTIPLY);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "div":{
-				string settarg=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				string tag_to=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(settarg);
-				if(tag_to.StartsWith(_dr))
-				{
-					args.Add(tag_to);
-				}
-				else
-				{
-					float np=0;
-					if(!float.TryParse(tag_to,out np))
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
-						#endif
-						res=false;
-						return null;
-					}
-					args.Add(np);
-				}
-				ret=new Operation(Operation.Commands.DIVIDE);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "abort":
-			{
-				ret=new Operation(Operation.Commands.ABORT);
-				res=true;
-				return ret;
-			}
-			case "continue":
-			{
-				ret=new Operation(Operation.Commands.CONTINUE);
-				res=true;
-				return ret;
-			}
-
-			case "return":
-			{
-				Operation retval=readOperation(_txt,ref pos,out result);
-				if(!result||retval==null)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read returned command  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(retval);
-				ret=new Operation(Operation.Commands.RETURN);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "foreach":
-			{
-				string listval=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read foreach list  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				string ob=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read foreach at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				if(ob!="{")
-				{
-					#if THING
-					Debug.LogWarning(string.Format("No opening bracket, this: {0} ",ob));
-					#endif
-					res=false;
-					return null;
-				}
-				List<Operation> lst=readOperationList(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read foreach operations at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-
-				args.Add(listval);
-				args.Add(lst);
-				ret=new Operation(Operation.Commands.FOREACH);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "target":
-			{
-				string condname=readString(_txt,ref pos,out result);
-				Condition a1=null;
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read target condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				if(condname=="condition")
-				{
-					a1=readCondition(_txt,ref pos,out result);
-					if(!result){
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read target cond  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;}
-
-				}
-				else
-				{
-					object aa;
-                                 if(!_context.TryGetValue(condname,out aa)||!(aa is Condition))
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
-						#endif
-						res=false;
-						return null;
-					}
-					a1=aa as Condition;
-				}
-				args.Add(a1);
-				string listname=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read target list at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(listname);
-
-				ret=new Operation(Operation.Commands.TARGET);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "accumulate":
-			{
-				string condname=readString(_txt,ref pos,out result);
-				Condition a1=null;
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				if(condname=="condition")
-				{
-					a1=readCondition(_txt,ref pos,out result);
-					if(!result){
-						#if THING
-						Debug.LogWarning(string.Format("Couldn't read accumulate cond  at pos: {0} ",pos));
-						#endif
-						res=false;
-						return null;}
-					
-				}
-				else
-				{
-					object aa;
-					if(!_context.TryGetValue(condname,out aa)||!(aa is Condition))
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
-						#endif
-						res=false;
-						return null;
-					}
-					a1=aa as Condition;
-				}
-				args.Add(a1);
-				string listname=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate list at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(listname);
-				string assignname=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate targ list at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				args.Add(assignname);
-				ret=new Operation(Operation.Commands.ACCUMULATE);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "clear":
-			{
-				string valname=readString(_txt,ref pos,out result);
-
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-
-				args.Add(valname);
-				ret=new Operation(Operation.Commands.CLEAR);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "hook":
-			{
-				string hookname=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(hookname);
-				string dataname=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(dataname);
-				ret=new Operation(Operation.Commands.HOOK);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-
-			case "choice":
-			{
-				string choice_name=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(choice_name);
-				string list_name=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(list_name);
-				string ret_name=readString(_txt,ref pos,out result);
-				
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(ret_name);
-				ret=new Operation(Operation.Commands.CHOICE);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "new":
-			{
-				string var_name=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(var_name);
-
-				ret=new Operation(Operation.Commands.NEW);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "pop":
-			{
-				string list_name=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(list_name);
-				string vn=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(vn);
-				ret=new Operation(Operation.Commands.POP);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "push":
-			{
-				string list_name=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(list_name);
-				string vn=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(vn);
-				ret=new Operation(Operation.Commands.PUSH);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "shift":
-			{
-				string list_name=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(list_name);
-				string vn=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(vn);
-				ret=new Operation(Operation.Commands.SHIFT);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "append":
-			{
-				string list_name=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(list_name);
-				string vn=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(vn);
-				ret=new Operation(Operation.Commands.APPEND);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "remove":
-			{
-				string list_name=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(list_name);
-				string vn=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(vn);
-				ret=new Operation(Operation.Commands.REMOVE);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			case "any":
-			{
-				string list_name=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(list_name);
-				string vn=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				
-				args.Add(vn);
-				ret=new Operation(Operation.Commands.ANY);
-				ret[_args]=args;
-				res=true;
-				return ret;
-			}
-			
-			default:
-			 {
-				#if THING
-				Debug.LogWarning(string.Format("Invalid command name at pos: {0} ",pos));
-				#endif
-				res=false;
-				return null;
- 			  }
- 			}
-		}
-		public static Condition readCondition(string _txt,ref int pos,out bool res) //after condition keyword, though not always?
-		{
-			bool result;
-			string vname=null;
-			string first=readString(_txt,ref pos,out result);
-			if(!result)
-			{
-				#if THING
-				Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
-				#endif
-				res=false;
-				return null;
-			}
-			if(first=="condition")
-			{
-				first=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-				#if THING
-				Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
-				#endif
-				res=false;
-				return null;
-				}
-			}
-			if(first=="condition")
-			{
-				#if THING
-				Debug.LogWarning(string.Format("Invalid condition name"));
-				#endif
-				res=false;
-				return null;
-			}
-			if(first!="{")
-			{
-				vname=first;
-				first=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-				#if THING
-				Debug.LogWarning(string.Format("Cannot read condition in string at pos: {0} ",pos));
-				#endif
-				res=false;
-				return null;
-				}
-			}
-			Condition ret=null;
-			if(first!="{") //alias
-			{
-				if(_context.ContainsKey(first))
-				{
-				ret=_context[first] as Condition;
-				}
-				else
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Invalid condition alias:  {0} ",first));
-					#endif
-					ret=null;
-				}
-
-			}
-			else
-			{
-				string ltype;
-				bool invert=false;
-				bool tpRead=false;
-				while(!tpRead)
-				{
-				ltype=readString(_txt,ref pos,out result);
-				if(!result)
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Cannot read condition type at pos: {0} ",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				if(ltype=="inverse")
-					invert=true;
-                else
-					{
-						switch(ltype)
-						{
-						case "tag":{
-							string tagname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read condition type at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							ret=new Condition(Condition.Type.TAG,tagname);
-						 }break;
-						case "true":{
-							ret=new Condition(Condition.Type.TRUE,"");
-						}break;
-						case "strcomp":{
-							string varname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read condition var name at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							string compval=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read condition comp value at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							ret=new Condition(Condition.Type.TAG,varname,compval);
-						}break;
-
-						case "any":{
-							string listname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-
-							string nxtname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							Condition tr;
-							if(nxtname!="condition")
-							{
-								if(!_context.ContainsKey(nxtname))
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
-									#endif
-									res=false;
-									return null;
-								}
-								tr=_context[nxtname] as Condition;
-							}
-							else
-							{
-								tr=readCondition(_txt,ref pos,out result);
-								if(!result)
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
-									#endif
-									res=false;
-									return null;
-								}
-							}
-							ret=new Condition(Condition.Type.COMPOUND_ANY,listname,tr);
-						}break;
-									
-						case "all":{
-							string listname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							
-							string nxtname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							Condition tr;
-							if(nxtname!="condition")
-							{
-								if(!_context.ContainsKey(nxtname))
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
-									#endif
-									res=false;
-									return null;
-								}
-								tr=_context[nxtname] as Condition;
-							}
-							else
-							{
-								tr=readCondition(_txt,ref pos,out result);
-								if(!result)
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
-									#endif
-									res=false;
-									return null;
-								}
-							}
-							ret=new Condition(Condition.Type.COMPOUND_ALL,listname,tr);
-						}break;
-						case "count":{
-							string listname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read list name at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							
-							string nxtname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							Condition tr;
-							if(nxtname!="condition")
-							{
-								if(!_context.ContainsKey(nxtname))
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtname));
-									#endif
-									res=false;
-									return null;
-								}
-								tr=_context[nxtname] as Condition;
-							}
-							else
-							{
-								tr=readCondition(_txt,ref pos,out result);
-								if(!result)
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
-									#endif
-									res=false;
-									return null;
-								}
-							}
-
-							string ccname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read condition  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							Condition tr2;
-							if(ccname!="condition")
-							{
-								if(!_context.ContainsKey(ccname))
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition name:  {0} ",ccname));
-									#endif
-									res=false;
-									return null;
-								}
-								tr2=_context[ccname] as Condition;
-							}
-							else
-							{
-								tr2=readCondition(_txt,ref pos,out result);
-								if(!result)
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
-									#endif
-									res=false;
-									return null;
-								}
-							}
-							ret=new Condition(Condition.Type.COMPOUND_COUNT,listname,tr,tr2);
-						}break;
-						case "less":{
-							string varname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							string cmpval=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							ret=new Condition(Condition.Type.LESS,varname,cmpval);
-
-						}break;
-
-						case "equal":{
-							string varname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							string cmpval=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							ret=new Condition(Condition.Type.EQUAL,varname,cmpval);
-							
-						}break;
-						case "greater":{
-							string varname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							string cmpval=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							ret=new Condition(Condition.Type.GREATER,varname,cmpval);
-							
-						}break;
-						case "ge":{
-							string varname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							string cmpval=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							ret=new Condition(Condition.Type.GE,varname,cmpval);
-							
-						}break;
-						case "le":{
-							string varname=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							string cmpval=readString(_txt,ref pos,out result);
-							if(!result)
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							ret=new Condition(Condition.Type.LE,varname,cmpval);
-							
-						}break;
-
-						case "and":{
-							string bracket=readString(_txt,ref pos,out result);
-							if(!result||bracket!="{")
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							List<Condition> lst=new List<Condition>();
-							string nxtpos=readString(_txt,ref pos,out result);
-							while(nxtpos!="}")
-							{
-								Condition tr;
-								if(nxtpos!="condition")
-								{
-									if(!_context.ContainsKey(nxtpos))
-									{
-										#if THING
-										Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtpos));
-										#endif
-										res=false;
-										return null;
-									}
-									tr=_context[nxtpos] as Condition;
-								}
-								else
-								{
-									tr=readCondition(_txt,ref pos,out result);
-									if(!result)
-									{
-										#if THING
-										Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
-										#endif
-										res=false;
-										return null;
-									}
-								}
-								lst.Add(tr);
-								nxtpos=readString(_txt,ref pos,out result);
-								if(!result)
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
-									#endif
-									res=false;
-									return null;
-								}
-							}
-							object [] pars=new object[lst.Count];
-							for(int i=0;i<lst.Count;i++)
-							{
-								pars[i]=lst[i];
-							}
-							ret=new Condition(Condition.Type.MULTI_AND,"_noname", pars);
-							
-						}break;
-						case "or":{
-							string bracket=readString(_txt,ref pos,out result);
-							if(!result||bracket!="{")
-							{
-								#if THING
-								Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
-								#endif
-								res=false;
-								return null;
-							}
-							List<Condition> lst=new List<Condition>();
-							string nxtpos=readString(_txt,ref pos,out result);
-							while(nxtpos!="}")
-							{
-								Condition tr;
-								if(nxtpos!="condition")
-								{
-									if(!_context.ContainsKey(nxtpos))
-									{
-										#if THING
-										Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtpos));
-										#endif
-										res=false;
-										return null;
-									}
-									tr=_context[nxtpos] as Condition;
-								}
-								else
-								{
-									tr=readCondition(_txt,ref pos,out result);
-									if(!result)
-									{
-										#if THING
-										Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
-										#endif
-										res=false;
-										return null;
-									}
-								}
-								lst.Add(tr);
-								nxtpos=readString(_txt,ref pos,out result);
-								if(!result)
-								{
-									#if THING
-									Debug.LogWarning(string.Format("Cannot find bracket { at pos {0} ",pos));
-									#endif
-									res=false;
-									return null;
-								}
-							}
-							object [] pars=new object[lst.Count];
-							for(int i=0;i<lst.Count;i++)
-							{
-								pars[i]=lst[i];
-							}
-							ret=new Condition(Condition.Type.MULTI_OR,"_noname", pars);
-							
-						}break;
-
-						default:
-						{
-							#if THING
-							Debug.LogWarning(string.Format("Invalid condition type: {0} ",ltype));
-							#endif
-							res=false;
-							return null;
-						}
-
-						}
-						tpRead=true;
-
-					}
-				}
-				ret.inverse=invert;
-				while(first!="}")
-				{
-					first=readString(_txt,ref pos,out result);
-					if(!result)
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Condition definition not closed with {} properly",pos));
-						#endif
-						res=false;
-						return null;
-					}
-				}
-			}
-			if(vname!=null)
-			{
-				if(_context.ContainsKey(vname))
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Duplicate condition name:  {0} ",vname));
-					#endif
-				}
-				_context[vname]=ret;
-			}
-			if(ret!=null) {res=true;}
-			else res=false;
-			return ret;
-		}
-		public static object readDefinition(string _txt,ref int pos,out bool res)
+		/*public static object readDefinition(string _txt,ref int pos,out bool res)
 		{
 			bool result=false;
 			object ret=null;
@@ -2876,7 +3228,7 @@ public class SingleGame
 					pos=pos-def.Length+1;
 
 				}
-				else*/
+				else
 				{
 					ret=alias;
 				}
@@ -2888,7 +3240,7 @@ public class SingleGame
 
 			}
 			return null;//TODO
-		}
+  } */
 
 	}
 }

@@ -1,0 +1,20 @@
+condition countHand
+{
+count _Game.HAND
+      condition { true }
+      condition { less _count 7 }
+}
+
+conditional drawRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition countHand
+function _commands 
+  {
+  any _Game.DECK _tmp
+  remove _Game.DECK _tmp
+  hook draw _tmp
+  push _Game.HAND _tmp  
+  }
+}

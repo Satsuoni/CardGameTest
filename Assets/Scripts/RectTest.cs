@@ -10,7 +10,13 @@ public class RectTest : MonoBehaviour {
 		string st="condition countHand {  and{ condition { true } condition { less _count 7 } condition { greater _count 7 }  }}";
 		int pos=0;
 		bool res=false;
-		SingleGame.Condition cnd=SingleGame.Parser.readCondition(st,ref pos,out res);
+		//SingleGame.Condition cnd=SingleGame.Parser.readCondition(st,ref pos,out res);
+    TextAsset ass=Resources.Load("draw") as TextAsset;
+    Debug.Log(ass.text);
+    //Debug.Log(SingleGame.Conditional.loadFromString(ass.text));
+   // string ch="return foreach _targetList { set crap 7.5 add crap 1 }";
+//    SingleGame.Operation op=SingleGame.Parser.readOperation(ch,ref pos,out res);
+    //Debug.Log(op.);
 		//Debug.Log(SingleGame.getRandString(20,0.1f));
 		Debug.Log(string.Format("Rect: {0}",tr.rect));
 		Debug.Log(string.Format("AncPos: {0}",tr.anchoredPosition));
@@ -23,5 +29,9 @@ public class RectTest : MonoBehaviour {
 	void Update () {
 		//RectTransform tr=gameObject.GetComponent<RectTransform>();
 	//	Debug.Log (tr.offsetMax);
+
+	}
+	void OnApplicationQuit() {
+		SingleGame.GameManager.STOP();
 	}
 }
