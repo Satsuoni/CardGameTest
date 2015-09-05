@@ -1838,7 +1838,8 @@ public class SingleGame
 				}
 				else
 				{
-                                 if(!_context.TryGetValue(condname,out a1))
+					object aa;
+                                 if(!_context.TryGetValue(condname,out aa)||!(aa is Condition))
 					{
 						#if THING
 						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
@@ -1846,6 +1847,7 @@ public class SingleGame
 						res=false;
 						return null;
 					}
+					a1=aa as Condition;
 				}
 				args.Add(a1);
 				string listname=readString(_txt,ref pos,out result);
@@ -1889,7 +1891,8 @@ public class SingleGame
 				}
 				else
 				{
-					if(!_context.TryGetValue(condname,out a1))
+					object aa;
+					if(!_context.TryGetValue(condname,out aa)||!(aa is Condition))
 					{
 						#if THING
 						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
@@ -1897,6 +1900,7 @@ public class SingleGame
 						res=false;
 						return null;
 					}
+					a1=aa as Condition;
 				}
 				args.Add(a1);
 				string listname=readString(_txt,ref pos,out result);
