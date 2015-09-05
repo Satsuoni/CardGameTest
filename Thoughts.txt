@@ -50,17 +50,9 @@ true
 
 Operations/commands (target is implicit, stack[_target]):
 
-			
-		
-			POP, //get fist and delete
-			PUSH, //put first
-			APPEND, //put last
-			SHIFT,//get last and delete
-			REMOVE,
-			ANY, //get any in list without deleting
 tag_set <string tag>
 tag_switch <string tag_from> <string tag_to>
-set <string var_name> <string object>
+set <string var_name> <string object> //sets value on TARGET, not stack
 add <string var_name> <float val>
 sub <string var_name> <float val>
 mul <string var_name> <float val>
@@ -74,7 +66,7 @@ accumulate  <condition cond> <string list_name> <string assign_to>
 clear <string stack_name>
 hook <string hook_name> <string data_name>
 choice <string choice_name> <string list_name> <string ret_name>
-new <string hook_name>
+new <string var_name>
 pop <string list_name> <string ret_value>
 push <string list_name> <string value>
 shift <string list_name> <string ret_value>

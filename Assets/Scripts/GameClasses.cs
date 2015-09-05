@@ -48,6 +48,8 @@ public class SingleGame
 	public const string _template="_template";
 	public const string _cardName="_cardName";
 	public const string _cardText="_cardText";
+	public const string _dr="<=";
+	public const int _drl=2;
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
@@ -59,8 +61,9 @@ public class SingleGame
 	public static int rngRange(int from, int to)
 	{
 		int ret;
-		lock (rnglock) {
-			ret=RNG.Next(from,to);
+		lock(rnglock)
+		{
+			ret=RNG.Next(from, to);
 		}
 		#if WHATHAPPENS
 		//Debug.Log(string.Format("rnd range: {0} - {1} : {2}",from,to,ret));
@@ -69,16 +72,15 @@ public class SingleGame
 	}
 	public static string getRandString(int length, float spaceprob=0)
 	{
-		var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-		var stringChars = new char[length];
+		var chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+		var stringChars=new char[length];
 
-		for (int i = 0; i < stringChars.Length; i++)
+		for(int i = 0; i < stringChars.Length; i++)
 		{
 			if(Random.value>spaceprob)
 			{
-				stringChars[i] = chars[rngRange(0,chars.Length)];
-			}
-			else
+				stringChars[i]=chars[rngRange(0, chars.Length)];
+			} else
 				stringChars[i]=' ';
 		}
 		
@@ -87,8 +89,8 @@ public class SingleGame
 	public static Conditional generateRandomCardTemplate()
 	{
 		Conditional ret=new Conditional();
-		ret[_cardName]=getRandString(5,0);
-		ret[_cardText]=getRandString(25,0.1f);
+		ret[_cardName]=getRandString(5, 0);
+		ret[_cardText]=getRandString(25, 0.1f);
 		return ret;
 	}
 	public class Conditional
@@ -135,61 +137,59 @@ public class SingleGame
 		{
 			return _values.ContainsKey(var);
 		}
-		public object this[string name] //let us add the dot notation...
-		{
-			get{
+		public object this [string name] { //let us add the dot notation...
+			get {
 				string [] ln=name.Split('.');
 				if(ln.Length==1)
-				 {
-				object ret=null;
-				if(_values.TryGetValue(ln[0],out ret)) return ret;
-				else return null;
-				 }
-				else
 				{
 					object ret=null;
-					if(_values.TryGetValue(ln[0],out ret)) 
+					if(_values.TryGetValue(ln[0], out ret))
+						return ret;
+					else
+						return null;
+				} else
+				{
+					object ret=null;
+					if(_values.TryGetValue(ln[0], out ret))
 					{
 						Conditional nxt=ret as Conditional;
 						return nxt[name.Substring(ln[0].Length+1)];//hopefully...
-					}
-					else return null;
+					} else
+						return null;
 				}
-			   }
-			set
-			{
+			}
+			set {
 				string [] ln=name.Split('.');
 				if(ln.Length==1)
 				{
-				if(acceptedValues!=null&&acceptedValues.ContainsKey(name))
-				{
-					List<object> acc=acceptedValues[name];
-					if(!acc.Contains(value))
+					if(acceptedValues!=null&&acceptedValues.ContainsKey(name))
 					{
-                        #if THING
-						Debug.Log(string.Format("Invalid value: {0} for name: {1}",value,name));
-                        #endif
-						return;
+						List<object> acc=acceptedValues[name];
+						if(!acc.Contains(value))
+						{
+							#if THING
+							Debug.Log(string.Format("Invalid value: {0} for name: {1}", value, name));
+							#endif
+							return;
+						}
 					}
-				}
-				if(acceptedTypes!=null&&acceptedTypes.ContainsKey(name))
-				{
-					System.Type acc=acceptedTypes[name];
-					System.Type ct=value.GetType();
-					if(ct!=acc&&!ct.IsSubclassOf(acc))//subclasses are accepted
+					if(acceptedTypes!=null&&acceptedTypes.ContainsKey(name))
 					{
-						#if THING
-						Debug.Log(string.Format("Invalid type: {0} for name: {1}",ct,name));
-						#endif
-						return;
+						System.Type acc=acceptedTypes[name];
+						System.Type ct=value.GetType();
+						if(ct!=acc&&!ct.IsSubclassOf(acc))//subclasses are accepted
+						{
+							#if THING
+							Debug.Log(string.Format("Invalid type: {0} for name: {1}", ct, name));
+							#endif
+							return;
+						}
 					}
-				}
-				_values[name]=value;
-				}
-				else
+					_values[name]=value;
+				} else
 				{
 					object ret=null;
-					if(_values.TryGetValue(ln[0],out ret)) 
+					if(_values.TryGetValue(ln[0], out ret))
 					{
 						Conditional nxt=ret as Conditional;
 						nxt[name.Substring(ln[0].Length+1)]=value;//hopefully...
@@ -226,8 +226,7 @@ public class SingleGame
 
 		bool _choiceInProgress=false;
 
-		public bool choiceInProgress
-		{
+		public bool choiceInProgress {
 			get {
 				return _choiceInProgress;
 			}
@@ -235,42 +234,36 @@ public class SingleGame
 
 		bool _hookInProgress=false;
 
-		public bool isWaiting
-		{
+		public bool isWaiting {
 			get {
 				return _choiceInProgress||_hookInProgress;
 			}
 		}
 
-		public bool hookInProgress
-		{
-			get{return _hookInProgress;}
+		public bool hookInProgress {
+			get{ return _hookInProgress;}
 		}
 
 		Conditional _hookData;
 		string _hookName=null;
-		public string hookName{ get{return _hookName;}
-		}
+		public string hookName{ get { return _hookName; } }
 
-		public Conditional hookData
-		{
-			get{return _hookData;}
+		public Conditional hookData {
+			get{ return _hookData;}
 		}
 
 		Conditional chosen=null;
 		IList _choiceList;
 		string _choiceName;
-		public string choiceName{ get{return _choiceName;}
-		}
-		public IList choiceList
-		{
-			get{return _choiceList;}
+		public string choiceName{ get { return _choiceName; } }
+		public IList choiceList {
+			get{ return _choiceList;}
 		}
 
 		void mainGameThread()
 		{
 			IList rulesAndEffects=_GameData[_effects] as IList;
-		   Conditional stack=new Conditional();
+			Conditional stack=new Conditional();
 			stack[_Game]=_GameData;
 			List<Conditional> wrappedEffects=new List<Conditional>();
 			foreach(object obj in rulesAndEffects)
@@ -279,10 +272,9 @@ public class SingleGame
 				if(eff==null)
 				{
 					#if THING
-					Debug.Log(string.Format("Invalid effect description: {0}",obj));
+					Debug.Log(string.Format("Invalid effect description: {0}", obj));
 					#endif
-				}
-				else
+				} else
 				{
 					Conditional wrap=new Conditional();
 					wrap[_effect]=eff;
@@ -305,9 +297,9 @@ public class SingleGame
 						if(cnd.isFulfilled(stack))
 						{
 							Operation op=new Operation(Operation.Commands.NEW);
-							Conditional nstack=op.createStack(stack,eff);
-							op.executeList(eff[_commands],nstack);
-							if(nstack.hasTag(TAG_ABORT)) 
+							Conditional nstack=op.createStack(stack, eff);
+							op.executeList(eff[_commands], nstack);
+							if(nstack.hasTag(TAG_ABORT))
 							{
 								Debug.Log("GameObject Overlapped");
 								return;//gameover? I guess
@@ -318,23 +310,23 @@ public class SingleGame
 			}
 		}
 
-		public static Conditional startChoice(string chname,IList objects)
+		public static Conditional startChoice(string chname, IList objects)
 		{
 			if(self==null||Thread.CurrentThread!=self.gameThread)
 			{
 				#if THING
-				Debug.Log(string.Format("Invalid thread calling choice: {0}",Thread.CurrentThread));
+				Debug.Log(string.Format("Invalid thread calling choice: {0}", Thread.CurrentThread));
 				#endif
 				return null;
 			}
 			if(self._choiceInProgress)
 			{
 				#if THING
-				Debug.Log(string.Format("Choice called for the second time -wtf?: {0}",Thread.CurrentThread));
+				Debug.Log(string.Format("Choice called for the second time -wtf?: {0}", Thread.CurrentThread));
 				#endif
 				return null;
 			}
-        lock(self.locket)
+			lock(self.locket)
 			{
 				self._choiceInProgress=true;
 				self._choiceList=objects;
@@ -355,7 +347,7 @@ public class SingleGame
 			if(self==null||Thread.CurrentThread==self.gameThread)
 			{
 				#if THING
-				Debug.Log(string.Format("Invalid thread calling choice end: {0}",Thread.CurrentThread));
+				Debug.Log(string.Format("Invalid thread calling choice end: {0}", Thread.CurrentThread));
 				#endif
 				return;
 			}
@@ -374,21 +366,21 @@ public class SingleGame
 			}
 			self._waitHandle.Set();
 		}
-		public static void startHook(string hName,Conditional hookData)
+		public static void startHook(string hName, Conditional hookData)
 		{
 			if(self==null||Thread.CurrentThread!=self.gameThread)
 			{
 				#if THING
-				Debug.Log(string.Format("Invalid thread calling hook start: {0}",Thread.CurrentThread));
+				Debug.Log(string.Format("Invalid thread calling hook start: {0}", Thread.CurrentThread));
 				#endif
 				return;
 			}
 			if(self._hookInProgress)
 			{
 				#if THING
-				Debug.Log(string.Format("Hook called for the second time -wtf?: {0}",Thread.CurrentThread));
+				Debug.Log(string.Format("Hook called for the second time -wtf?: {0}", Thread.CurrentThread));
 				#endif
-				return ;
+				return;
 			}
 			lock(self.locket)
 			{
@@ -410,7 +402,7 @@ public class SingleGame
 			if(self==null||Thread.CurrentThread==self.gameThread)
 			{
 				#if THING
-				Debug.Log(string.Format("Invalid thread calling hook end: {0}",Thread.CurrentThread));
+				Debug.Log(string.Format("Invalid thread calling hook end: {0}", Thread.CurrentThread));
 				#endif
 				return;
 			}
@@ -424,17 +416,17 @@ public class SingleGame
 			self._waitHandle.Set();
 		}
 		public void fillGameData()
-		 {
+		{
 			_GameData=new Conditional(); //a test, for now..
 			List<Conditional> deck=new List<Conditional>();
-			for(int i=0;i<30;i++)
+			for(int i=0; i<30; i++)
 				deck.Add(generateRandomCardTemplate());
 			_GameData["DECK"]=deck;
 			_GameData["HAND"]=new List<Conditional>();
 			List<Conditional> effs=new List<Conditional>();
 			Conditional drawRule=new Conditional();
-			Condition compareto7=new Condition(Condition.Type.LESS,_count,7);
-			Condition count=new Condition(Condition.Type.COMPOUND_COUNT,_Game+".HAND",new Condition(Condition.Type.TRUE,""),compareto7);
+			Condition compareto7=new Condition(Condition.Type.LESS, _count, 7);
+			Condition count=new Condition(Condition.Type.COMPOUND_COUNT, _Game+".HAND", new Condition(Condition.Type.TRUE, ""), compareto7);
 
 			drawRule[_condition]=count;
 			List<Operation> seq=new List<Operation>();
@@ -469,7 +461,7 @@ public class SingleGame
 			drawRule[_commands]=seq;
 			effs.Add(drawRule);
 			_GameData[_effects]=effs;
-		 }
+		}
 		public void Start()
 		{
 			if(self!=null)
@@ -481,7 +473,7 @@ public class SingleGame
 			fillGameData();
 			self=this;
 			gameThread=new Thread(mainGameThread);
-			_waitHandle =new AutoResetEvent(false);
+			_waitHandle=new AutoResetEvent(false);
 			gameThread.Start();
 		}
 	}
@@ -489,9 +481,9 @@ public class SingleGame
 	{
 		public enum Commands
 		{
-        TAG_SET,
-		TAG_SWITCH,
-		VALUE_SET,
+			TAG_SET,
+			TAG_SWITCH,
+			VALUE_SET,
 			ADD,
 			SUBTRACT,
 			MULTIPLY,
@@ -519,7 +511,7 @@ public class SingleGame
 		{
 			_command=com;
 		}
-		public Conditional createStack(Conditional oldstack,Conditional exeffect)
+		public Conditional createStack(Conditional oldstack, Conditional exeffect)
 		{
 			Conditional ret=new Conditional();
 			List <Conditional> efs=new List<Conditional>();
@@ -536,7 +528,7 @@ public class SingleGame
 						efContain.setTag(TAG_STACKED);
 					if(eff==exeffect)
 					{
-						Debug.Log(string.Format("Stacking: {0}",ef));
+						Debug.Log(string.Format("Stacking: {0}", ef));
 						efContain.setTag(TAG_STACKED);
 					}
 					efContain[_effect]=eff[_effect];
@@ -546,116 +538,136 @@ public class SingleGame
 			ret[_target]=this;//current command becomes a target?
 			ret[_currentCommand]=null;
 			foreach(string nm in __stackValues)
-			  ret[nm]=oldstack[nm];
+				ret[nm]=oldstack[nm];
 			ret[_Source]=exeffect[_effect];
 			return ret;//TOFIX
 		}
 		static public object deRef(object a, Conditional stack)
 		{
-			if(a is string &&(a as string).StartsWith("<="))
+			if(a is string&&(a as string).StartsWith(_dr))
 			{
-				return stack[(a as string).Substring(2)];
+				return stack[(a as string).Substring(_drl)];
 			}
 			return a;
 		}
 		void  __pureExecute(Conditional stack)
 		{
-			if(stack.hasTag(TAG_ABORT)) return;
+			if(stack.hasTag(TAG_ABORT))
+				return;
 			Conditional target=stack[_target] as Conditional;
 			IList args=this[_args] as IList;
 			switch(_command)
 			{
-			case Commands.TAG_SET:{target.setTag(args[0] as string);}break;
-			case Commands.TAG_SWITCH:{
-				 if(target.hasTag(args[0] as string))
-				 {
-					target.removeTag(args[0] as string);
-					target.setTag(args[1] as string);
-				 }
-			      }break;
-			case Commands.VALUE_SET:{if(args[1]is string &&(args[1] as string).StartsWith("<="))
+			case Commands.TAG_SET:
 				{
-					target[args[0] as string]=stack[(args[1] as string).Substring(2)];
-				}
-				else
-				target[args[0] as string]=args[1];}break;
-			case Commands.ADD:{
-				object a1=target[args[0] as string];
-				object a2=deRef( args[1],stack);
-				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2),a1.GetType());}break;
-			case Commands.SUBTRACT:{
-				object a1=target[args[0] as string];
-				object a2=deRef( args[1],stack);
-				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2),a1.GetType());}break;
-			case Commands.MULTIPLY:{
-				object a1=target[args[0] as string];
-				object a2=deRef( args[1],stack);
-				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2),a1.GetType());}break;
-			case Commands.DIVIDE:{
-				object a1=target[args[0] as string];
-				object a2=deRef( args[1],stack);
-				target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2),a1.GetType());}break;
-			case Commands.ABORT:
-			{
-				stack.setTag(TAG_ABORT);
-			}break;
-			case Commands.CONTINUE:
-			{
-				stack.setTag(TAG_CONTINUE);
-			}break;
-			case Commands.NEW:
-			{
-				string nm=args[0] as string;
-				if(stack[nm] as Conditional==null)
-					stack[nm]=new Conditional();
-			}break;
-			case Commands.RETURN: //argument :  returned command/operation
-			{
-				stack.setTag(TAG_RETURN);
-				stack[_returnValue]=args[0] as Operation;
-			}break;
-			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack args[1]->list of commands
-			{
-				string lname=args[0] as string;
-				if(stack[lname]!=null)
+					target.setTag(args[0] as string);}
+				break;
+			case Commands.TAG_SWITCH:
 				{
-					IList lst=stack[lname] as IList;
-					if(lst!=null)
+					if(target.hasTag(args[0] as string))
 					{
-						foreach(object pcn in lst)
+						target.removeTag(args[0] as string);
+						target.setTag(args[1] as string);
+					}
+				}
+				break;
+			case Commands.VALUE_SET:
+				{
+					if(args[1]is string&&(args[1] as string).StartsWith(_dr))
+					{
+						target[args[0] as string]=stack[(args[1] as string).Substring(_drl)];
+					} else
+						target[args[0] as string]=args[1];}
+				break;
+			case Commands.ADD:
+				{
+					object a1=target[args[0] as string];
+					object a2=deRef(args[1], stack);
+					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2), a1.GetType());}
+				break;
+			case Commands.SUBTRACT:
+				{
+					object a1=target[args[0] as string];
+					object a2=deRef(args[1], stack);
+					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2), a1.GetType());}
+				break;
+			case Commands.MULTIPLY:
+				{
+					object a1=target[args[0] as string];
+					object a2=deRef(args[1], stack);
+					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2), a1.GetType());}
+				break;
+			case Commands.DIVIDE:
+				{
+					object a1=target[args[0] as string];
+					object a2=deRef(args[1], stack);
+					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2), a1.GetType());}
+				break;
+			case Commands.ABORT:
+				{
+					stack.setTag(TAG_ABORT);
+				}
+				break;
+			case Commands.CONTINUE:
+				{
+					stack.setTag(TAG_CONTINUE);
+				}
+				break;
+			case Commands.NEW:
+				{
+					string nm=args[0] as string;
+					if(stack[nm] as Conditional==null)
+						stack[nm]=new Conditional();
+				}
+				break;
+			case Commands.RETURN: //argument :  returned command/operation
+				{
+					stack.setTag(TAG_RETURN);
+					stack[_returnValue]=args[0] as Operation;
+				}
+				break;
+			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack args[1]->list of commands
+				{
+					string lname=args[0] as string;
+					if(stack[lname]!=null)
+					{
+						IList lst=stack[lname] as IList;
+						if(lst!=null)
 						{
-							Conditional newtarget=pcn as Conditional;
-							if(newtarget==null)
+							foreach(object pcn in lst)
 							{
-								#if THING
-								Debug.Log("Invalid target in foreach list");
-								#endif
+								Conditional newtarget=pcn as Conditional;
+								if(newtarget==null)
+								{
+									#if THING
+									Debug.Log("Invalid target in foreach list");
+									#endif
+								} else
+								{
+									stack[_target]=newtarget;
+									executeList(args[1], stack);
+									if(stack.hasTag(TAG_ABORT))
+										return;
+									stack.removeTag(TAG_CONTINUE);
+								}
 							}
-							else
-							{
-								stack[_target]=newtarget;
-								executeList(args[1],stack);
-								if(stack.hasTag(TAG_ABORT)) return;
-								stack.removeTag(TAG_CONTINUE);
-							}
+						} else
+						{
+							#if THING
+							Debug.Log(string.Format("Invalid foreach argument: {0}", lname));
+							#endif
 						}
 					}
-					else
-					{
-						#if THING
-						Debug.Log(string.Format("Invalid foreach argument: {0}",lname));
-						#endif
-					}
 				}
-			}break;
-				case Commands.TARGET://will assign _targetList? value in stack arg0 - condition, arg1 - list, equivalent of accumulate for specific list
+				break;
+			case Commands.TARGET://will assign _targetList? value in stack arg0 - condition, arg1 - list, equivalent of accumulate for specific list
 				{
 					List<Conditional> targs=new List<Conditional>();
 					Condition baseCond=args[0] as Condition;
 					if(baseCond==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid target condition : {0}",args[0]));
+						Debug.Log(string.Format("Invalid target condition : {0}", args[0]));
 						#endif
 						return;
 					}
@@ -663,155 +675,193 @@ public class SingleGame
 					if(vars==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid target list : {0}",args[1]));
+						Debug.Log(string.Format("Invalid target list : {0}", args[1]));
 						#endif
 						return;
 					}
 					foreach(object potCn in vars)
 					{
 						Conditional check=potCn as Conditional;
-						if(baseCond.isFulfilled(check)) targs.Add(check);
+						if(baseCond.isFulfilled(check))
+							targs.Add(check);
 					}
 					stack[_targetList]=targs;
-				};break;
+				}
+				;
+				break;
 			case Commands.ACCUMULATE://will assign arg2 value in stack arg0 - condition, arg1 - list. appends to list if it exists
-			{
-				List<Conditional> targs=new List<Conditional>();
-				string listname=args[2] as string;
-				IList oldList=stack[listname] as IList;
-				if(oldList!=null)
 				{
-					foreach(object l in oldList) targs.Add(l as Conditional);
+					List<Conditional> targs=new List<Conditional>();
+					string listname=args[2] as string;
+					IList oldList=stack[listname] as IList;
+					if(oldList!=null)
+					{
+						foreach(object l in oldList)
+							targs.Add(l as Conditional);
+					}
+					Condition baseCond=args[0] as Condition;
+					if(baseCond==null)
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid target condition : {0}", args[0]));
+						#endif
+						return;
+					}
+					IList vars=stack[args[1] as string] as IList;
+					if(vars==null)
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid target list : {0}", args[1]));
+						#endif
+						return;
+					}
+					foreach(object potCn in vars)
+					{
+						Conditional check=potCn as Conditional;
+						if(baseCond.isFulfilled(check))
+							targs.Add(check);
+					}
+					stack[listname]=targs;
 				}
-				Condition baseCond=args[0] as Condition;
-				if(baseCond==null)
-				{
-					#if THING
-					Debug.Log(string.Format("Invalid target condition : {0}",args[0]));
-					#endif
-					return;
-				}
-				IList vars=stack[args[1] as string] as IList;
-				if(vars==null)
-				{
-					#if THING
-					Debug.Log(string.Format("Invalid target list : {0}",args[1]));
-					#endif
-					return;
-				}
-				foreach(object potCn in vars)
-				{
-					Conditional check=potCn as Conditional;
-					if(baseCond.isFulfilled(check)) targs.Add(check);
-				}
-				stack[listname]=targs;
-			};break;
+				;
+				break;
 			case Commands.CLEAR:
-			{
-				string nm=args[0] as string;
-				if(nm!=null)
-					stack[nm]=null;
-			};break;
+				{
+					string nm=args[0] as string;
+					if(nm!=null)
+						stack[nm]=null;
+				}
+				;
+				break;
 			case Commands.POP: //arg0 - list name, arg1- stackvar
-			{
-				string nm=args[0] as string;
-				IList lst=stack[nm] as IList;
-				string retname=args[1] as string;
-				if(lst!=null&&retname!=null)
 				{
-					if(lst.Count>0)
+					string nm=args[0] as string;
+					IList lst=stack[nm] as IList;
+					string retname=args[1] as string;
+					if(lst!=null&&retname!=null)
 					{
-						stack[retname]=lst[0];
-						lst.RemoveAt(0);
+						if(lst.Count>0)
+						{
+							stack[retname]=lst[0];
+							lst.RemoveAt(0);
+						}
 					}
 				}
-			};break;
+				;
+				break;
 			case Commands.PUSH: //arg0 - list name, arg1- stackvar
-			{
-				string nm=args[0] as string;
-				IList lst=stack[nm] as IList;
-				string retname=args[1] as string;
-				if(lst==null) {lst=new List<object>(); stack[nm]=lst;} //should be avoided...
-				if(lst!=null&&retname!=null&&stack[retname]!=null)
 				{
-					lst.Insert(0,stack[retname]);
+					string nm=args[0] as string;
+					IList lst=stack[nm] as IList;
+					string retname=args[1] as string;
+					if(lst==null)
+					{
+						lst=new List<object>();
+						stack[nm]=lst;
+					} //should be avoided...
+					if(lst!=null&&retname!=null&&stack[retname]!=null)
+					{
+						lst.Insert(0, stack[retname]);
+					}
 				}
-			};break;
+				;
+				break;
 			case Commands.SHIFT: //arg0 - list name, arg1- stackvar
-			{
-				string nm=args[0] as string;
-				IList lst=stack[nm] as IList;
-				string retname=args[1] as string;
-				if(lst!=null&&retname!=null)
 				{
-					if(lst.Count>0)
+					string nm=args[0] as string;
+					IList lst=stack[nm] as IList;
+					string retname=args[1] as string;
+					if(lst!=null&&retname!=null)
 					{
-						stack[retname]=lst[lst.Count-1];
-						lst.RemoveAt(lst.Count-1);
+						if(lst.Count>0)
+						{
+							stack[retname]=lst[lst.Count-1];
+							lst.RemoveAt(lst.Count-1);
+						}
 					}
 				}
-			};break;
+				;
+				break;
 			case Commands.APPEND: //arg0 - list name, arg1- stackvar
-			{
-				string nm=args[0] as string;
-				IList lst=stack[nm] as IList;
-				string retname=args[1] as string;
-				if(lst==null) {lst=new List<object>(); stack[nm]=lst;} //should be avoided...
-				if(lst!=null&&retname!=null&&stack[retname]!=null)
 				{
-					lst.Add(stack[retname]);
-				}
-			};break;
-			case Commands.REMOVE: // removes object from listarg0 - list name, arg1- stackvar
-			{
-				string nm=args[0] as string;
-				IList lst=stack[nm] as IList;
-				string retname=args[1] as string;
-				if(lst==null) {lst=new List<object>(); stack[nm]=lst;} //should be avoided...
-				if(lst!=null&&retname!=null&&stack[retname]!=null)
-				{
-					lst.Remove(stack[retname]);
-				}
-			};break;
-			case Commands.ANY: //get any (random) in list without deleting arg0 - list name, arg1- stackvar
-			{
-				string nm=args[0] as string;
-				IList lst=stack[nm] as IList;
-				string retname=args[1] as string;
-				if(lst!=null&&retname!=null)
-				{
-					if(lst.Count>0)
+					string nm=args[0] as string;
+					IList lst=stack[nm] as IList;
+					string retname=args[1] as string;
+					if(lst==null)
 					{
-
-						stack[retname]=lst[rngRange(0,lst.Count)];
-
+						lst=new List<object>();
+						stack[nm]=lst;
+					} //should be avoided...
+					if(lst!=null&&retname!=null&&stack[retname]!=null)
+					{
+						lst.Add(stack[retname]);
 					}
 				}
-			};break;
-			case Commands.HOOK: //call hook of name with data
-			{
-				string nm=args[0] as string;
-				string nmData=args[1] as string;
-				GameManager.startHook(nm,stack[nmData] as Conditional);
-			};break;
-			case Commands.CHOICE: //call for player choice, store result  in arg2: 
-			{
-				string chname=args[0] as string;
-				string nm=args[1] as string;
-				IList lst=stack[nm] as IList;
-				if(lst==null)
+				;
+				break;
+			case Commands.REMOVE: // removes object from listarg0 - list name, arg1- stackvar
 				{
-					#if THING
-					Debug.Log(string.Format("Invalid choice list : {0}",nm));
-					#endif
-					return;
+					string nm=args[0] as string;
+					IList lst=stack[nm] as IList;
+					string retname=args[1] as string;
+					if(lst==null)
+					{
+						lst=new List<object>();
+						stack[nm]=lst;
+					} //should be avoided...
+					if(lst!=null&&retname!=null&&stack[retname]!=null)
+					{
+						lst.Remove(stack[retname]);
+					}
 				}
-				string nmRet=args[2] as string;
-				Conditional ret=GameManager.startChoice(chname,lst);
-				stack[nmRet]=ret;
-			};break;
+				;
+				break;
+			case Commands.ANY: //get any (random) in list without deleting arg0 - list name, arg1- stackvar
+				{
+					string nm=args[0] as string;
+					IList lst=stack[nm] as IList;
+					string retname=args[1] as string;
+					if(lst!=null&&retname!=null)
+					{
+						if(lst.Count>0)
+						{
 
-			};
+							stack[retname]=lst[rngRange(0, lst.Count)];
+
+						}
+					}
+				}
+				;
+				break;
+			case Commands.HOOK: //call hook of name with data
+				{
+					string nm=args[0] as string;
+					string nmData=args[1] as string;
+					GameManager.startHook(nm, stack[nmData] as Conditional);
+				}
+				;
+				break;
+			case Commands.CHOICE: //call for player choice, store result  in arg2: 
+				{
+					string chname=args[0] as string;
+					string nm=args[1] as string;
+					IList lst=stack[nm] as IList;
+					if(lst==null)
+					{
+						#if THING
+						Debug.Log(string.Format("Invalid choice list : {0}", nm));
+						#endif
+						return;
+					}
+					string nmRet=args[2] as string;
+					Conditional ret=GameManager.startChoice(chname, lst);
+					stack[nmRet]=ret;
+				}
+				;
+				break;
+
+			}
+			;
 
 		}
 		public Operation executeList(object lst, Conditional stack) //has *new* stack as parameter
@@ -826,11 +876,11 @@ public class SingleGame
 			IList list=lst as IList;
 			foreach(object obj in list)
 			{
-				Operation op = obj as Operation;
+				Operation op=obj as Operation;
 				if(op==null)
 				{
 					#if THING
-					Debug.Log(string.Format("Invalid command: {0}",obj));
+					Debug.Log(string.Format("Invalid command: {0}", obj));
 					#endif
 					return null;
 				}
@@ -843,56 +893,56 @@ public class SingleGame
 			}
 			return null;
 		}
-		void iterateOverEffects(IList efs,Conditional stack,string tag)
+		void iterateOverEffects(IList efs, Conditional stack, string tag)
 		{
-			if(stack.hasTag(TAG_ABORT)) return;
+			if(stack.hasTag(TAG_ABORT))
+				return;
 			bool didActivate=true;
-				foreach(object o in efs)
-				{
-					Conditional preffect=o as Conditional;
-					if(preffect!=null)
-						preffect.removeTag(TAG_ACTIVATED);
-				}
-			while(didActivate)
-				{
-					didActivate=false;
 			foreach(object o in efs)
 			{
 				Conditional preffect=o as Conditional;
-				Conditional effect=null;
-				if(preffect!=null&&!preffect.hasTag(TAG_ACTIVATED)&&!preffect.hasTag(TAG_STACKED))
+				if(preffect!=null)
+					preffect.removeTag(TAG_ACTIVATED);
+			}
+			while(didActivate)
+			{
+				didActivate=false;
+				foreach(object o in efs)
 				{
-					effect=preffect[_effect] as Conditional;
-					if(effect.hasTag(tag))
+					Conditional preffect=o as Conditional;
+					Conditional effect=null;
+					if(preffect!=null&&!preffect.hasTag(TAG_ACTIVATED)&&!preffect.hasTag(TAG_STACKED))
 					{
-					Condition cn=effect[_condition] as Condition;
-					if(cn==null)
-					{
-						Debug.Log(string.Format("Invalid effect condition {0}",effect[_condition]));
-					}
-					else
-					{
-						if(cn.isFulfilled(stack)) //execute effect
+						effect=preffect[_effect] as Conditional;
+						if(effect.hasTag(tag))
 						{
-							preffect.setTag(TAG_ACTIVATED);
-										didActivate=true;
-								Operation ret= executeList(effect[_commands],createStack(stack,effect));
-							if(ret!=null)
-							 ret.__pureExecute(stack);
-							if(stack.hasTag(TAG_ABORT)) return;
-						}
-					}
+							Condition cn=effect[_condition] as Condition;
+							if(cn==null)
+							{
+								Debug.Log(string.Format("Invalid effect condition {0}", effect[_condition]));
+							} else
+							{
+								if(cn.isFulfilled(stack)) //execute effect
+								{
+									preffect.setTag(TAG_ACTIVATED);
+									didActivate=true;
+									Operation ret=executeList(effect[_commands], createStack(stack, effect));
+									if(ret!=null)
+										ret.__pureExecute(stack);
+									if(stack.hasTag(TAG_ABORT))
+										return;
+								}
+							}
 
-					}
+						}
 
 					
-				}
-				else
-				{
-					Debug.Log(string.Format("Invalid effect {0}",o));
+					} else
+					{
+						Debug.Log(string.Format("Invalid effect {0}", o));
+					}
 				}
 			}
-				}
 		}
 		public void _execute(Conditional stack)
 		{
@@ -900,25 +950,27 @@ public class SingleGame
 			IList efs=stack[_effects] as IList;
 			if(efs==null)
 			{
-         #if THING
+				#if THING
 				Debug.Log("Possibly invalid setting of _effects in stack");
-         #endif
-			}
-			else
+				#endif
+			} else
 			{
 				stack.setTag(EXECUTE_PREFIX);
-				iterateOverEffects(efs,stack,EXECUTE_PREFIX);
+				iterateOverEffects(efs, stack, EXECUTE_PREFIX);
 				stack.removeTag(EXECUTE_PREFIX);
-				if(stack.hasTag(TAG_ABORT)) return;
+				if(stack.hasTag(TAG_ABORT))
+					return;
 			}
-				__pureExecute(stack);
-			if(stack.hasTag(TAG_ABORT)) return;
+			__pureExecute(stack);
+			if(stack.hasTag(TAG_ABORT))
+				return;
 			if(efs!=null)
 			{
-								stack.setTag(EXECUTE_POSTFIX);
-				iterateOverEffects(efs,stack,EXECUTE_POSTFIX);
+				stack.setTag(EXECUTE_POSTFIX);
+				iterateOverEffects(efs, stack, EXECUTE_POSTFIX);
 				stack.removeTag(EXECUTE_POSTFIX);
-				if(stack.hasTag(TAG_ABORT)) return;
+				if(stack.hasTag(TAG_ABORT))
+					return;
 			}
 
 			
@@ -942,25 +994,25 @@ public class SingleGame
 			GREATER,
 			LE,
 			GE,
-		    TRUE
+			TRUE
 		}
 		public bool inverse;
 		public Type type;
 		//public Type type_compound;//type to use for compound conditions
 		public string  variables; //variable name to compare OR tag
 		//public string variable_compound;
-		public object [] values;//value(s) to compare to
+		public object[] values;//value(s) to compare to
 		public Condition()
 		{
 			inverse=false;
 		}
-		public Condition(Type t, string   var, params object [] val)
+		public Condition(Type t, string   var, params object[] val)
 		{
 			inverse=false;
 			type=t;
-			variables= var;
+			variables=var;
 			values=new object [val.Length];
-			for(int i=0;i<val.Length;i++)
+			for(int i=0; i<val.Length; i++)
 			{
 				values[i]=val[i];
 			}
@@ -969,12 +1021,14 @@ public class SingleGame
 		public bool isFulfilled(Conditional cnd)
 		{
 			bool res=__isFulfilled(cnd);
-			if(inverse) return !res;
+			if(inverse)
+				return !res;
 			return res;
 		}
 		protected bool __isFulfilled(Conditional cnd)
 		{
-					if(type==Type.TRUE) return true;
+			if(type==Type.TRUE)
+				return true;
 			string variable=variables;
 			/*if(variables.Length==0) return false;
 			if(variables.Length>1)
@@ -996,41 +1050,53 @@ public class SingleGame
 				return cnd.hasTag(variable);
 			if(type==Type.STRING)
 			{
-				if(values.Length<1) return false;
+				if(values.Length<1)
+					return false;
 				string val2=cnd[variable] as string;
-				if(val2==null) return false;
+				if(val2==null)
+					return false;
 				return (val2==(values[0] as string));
 			}
 			if(type==Type.COMPOUND_ALL||type==Type.COMPOUND_ANY||type==Type.COMPOUND_COUNT) //compounds! EW
 			{
-				if(values.Length<1) return false;
-				if(values.Length<2&&type==Type.COMPOUND_COUNT) return false;
+				if(values.Length<1)
+					return false;
+				if(values.Length<2&&type==Type.COMPOUND_COUNT)
+					return false;
 				Condition compcond=values[0] as Condition;
-				if(compcond==null) {
+				if(compcond==null)
+				{
 					#if THING
-					Debug.Log(string.Format("Invalid value for compound condition : {0}",values[0]));
+					Debug.Log(string.Format("Invalid value for compound condition : {0}", values[0]));
 					#endif
 					return false;
 				}
 				object cval=cnd[variable];
-				if(!(cval is IList)) return false;
+				if(!(cval is IList))
+					return false;
 				List<Conditional> ccnds=cval as List<Conditional>;
-				if(ccnds==null) return false;
+				if(ccnds==null)
+					return false;
 				int cnt=0;
 				foreach(Conditional cn in ccnds)
 				{
 					bool res=compcond.isFulfilled(cn);
-					if(type==Type.COMPOUND_ALL&&!res) return false;
-					if(type==Type.COMPOUND_ANY&&res) return true;
-					if(type==Type.COMPOUND_COUNT&&res) cnt=cnt+1;
+					if(type==Type.COMPOUND_ALL&&!res)
+						return false;
+					if(type==Type.COMPOUND_ANY&&res)
+						return true;
+					if(type==Type.COMPOUND_COUNT&&res)
+						cnt=cnt+1;
 				}
-				if(type==Type.COMPOUND_ALL) return true;
+				if(type==Type.COMPOUND_ALL)
+					return true;
 				if(type==Type.COMPOUND_ANY)
 					return false;
 				if(type==Type.COMPOUND_COUNT)
 				{
 					Condition cnd2=values[1] as Condition;
-					if(cnd2==null) return false;
+					if(cnd2==null)
+						return false;
 					Conditional temp=new Conditional();
 					temp[_count]=cnt;
 					temp[_parent]=cnd;
@@ -1047,11 +1113,15 @@ public class SingleGame
 					if(tcnd==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid value for multi_and condition : {0}",obj));
+						Debug.Log(string.Format("Invalid value for multi_and condition : {0}", obj));
 						#endif
 						return false;
 					}
-					if(!tcnd.isFulfilled(cnd)){ok=false;break;}
+					if(!tcnd.isFulfilled(cnd))
+					{
+						ok=false;
+						break;
+					}
 				}
 				return ok;
 			}
@@ -1064,30 +1134,36 @@ public class SingleGame
 					if(tcnd==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid value for multi_or condition : {0}",obj));
+						Debug.Log(string.Format("Invalid value for multi_or condition : {0}", obj));
 						#endif
 						return false;
 					}
-					if(tcnd.isFulfilled(cnd)){ok=true;break;}
+					if(tcnd.isFulfilled(cnd))
+					{
+						ok=true;
+						break;
+					}
 				}
 				return ok;
 			}
 
 			// no good way to compare values, I guess...
-			if(values.Length<1) return false;
+			if(values.Length<1)
+				return false;
 			object val=cnd[variable];
 			object ncmpval=values[0];
 			if(values[0] is string)// try loading it as cnd name?
 			{
 				string st=values[0] as string;
-				if(st!=null&&st.StartsWith("<="))
+				if(st!=null&&st.StartsWith(_dr))
 				{
-					string vname=st.Substring(2);
+					string vname=st.Substring(_drl);
 					ncmpval=cnd[vname];
 				}
 			}
 			int cmp=0;
-			if(val==null) return false;
+			if(val==null)
+				return false;
 			System.Type vtp_stupid=val.GetType();
 			System.TypeCode vtp=System.Type.GetTypeCode(vtp_stupid);
 			switch(vtp)
@@ -1095,25 +1171,40 @@ public class SingleGame
 			case System.TypeCode.Int16:
 			case System.TypeCode.Int32:
 			case System.TypeCode.Int64:
-			{
-				System.Int64 cndval=System.Convert.ToInt64(ncmpval);
-				System.Int64 cmpval=System.Convert.ToInt64(val);
-				cmp=cmpval.CompareTo(cndval);
-			};break;
-			default:{
-				System.Double cndval=System.Convert.ToDouble(ncmpval);
-				System.Double cmpval=System.Convert.ToDouble(val);
-				cmp=cmpval.CompareTo(cndval);
+				{
+					System.Int64 cndval=System.Convert.ToInt64(ncmpval);
+					System.Int64 cmpval=System.Convert.ToInt64(val);
+					cmp=cmpval.CompareTo(cndval);
+				}
+				;
+				break;
+			default:
+				{
+					System.Double cndval=System.Convert.ToDouble(ncmpval);
+					System.Double cmpval=System.Convert.ToDouble(val);
+					cmp=cmpval.CompareTo(cndval);
 
-			};break;
+				}
+				;
+				break;
 			}
 			switch(type)
 			{
-			case Type.GREATER:{return (cmp==1);}
-			case Type.LESS:{return (cmp==-1);}
-			case Type.EQUAL:{return (cmp==0);}
-			case Type.GE:{return (cmp==1||cmp==0);}
-			case Type.LE:{return (cmp==-1||cmp==0);}
+			case Type.GREATER:
+				{
+					return (cmp==1);}
+			case Type.LESS:
+				{
+					return (cmp==-1);}
+			case Type.EQUAL:
+				{
+					return (cmp==0);}
+			case Type.GE:
+				{
+					return (cmp==1||cmp==0);}
+			case Type.LE:
+				{
+					return (cmp==-1||cmp==0);}
 			default:
 				return false;
 			}
@@ -1139,18 +1230,18 @@ public class SingleGame
 
 	public class Event:Conditional
 	{
-	public Event(float delay=0):base()
+		public Event(float delay=0):base()
 		{
 			acceptedTypes[_delay]=typeof(float);
 			_values[_delay]=delay;
 		}
-    public float advanceTime(float shift)
+		public float advanceTime(float shift)
 		{
 			float cdelay=(float)this[_delay];
-			if(cdelay<shift) 
+			if(cdelay<shift)
 			{
 				#if THING
-				Debug.Log(string.Format("Invalid time shifting at Event {0} of time {1}",this,shift));
+				Debug.Log(string.Format("Invalid time shifting at Event {0} of time {1}", this, shift));
 				#endif
 				shift=cdelay;
 			}
@@ -1177,7 +1268,7 @@ public class SingleGame
 			FLOAT, 
 			STRING
 		}
-		public static readonly string[] BaseTypes = { "condition", "conditional", "function", "int","float","string" };
+		public static readonly string[] BaseTypes={ "condition", "conditional", "function", "int","float","string" };
 		public static Dictionary<string,object> _context=new Dictionary<string, object>();
 		public static void ParseIntoContext(string txt)
 		{
@@ -1361,6 +1452,776 @@ public class SingleGame
 				return null;
 			}
 		}*/
+		public static List<Operation> readOperationList(string _txt,ref int pos,out bool res)
+		{
+			List<Operation> ret=new List<Operation>();
+			bool result;
+			while(true)
+			{
+				Operation rd=readOperation(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Cannot read operation in string at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				if(rd==null) break;
+				ret.Add(rd);
+			}
+
+			res=true;
+			return ret;
+		}
+		public static Operation readOperation(string _txt,ref int pos,out bool res)
+		{
+			bool result;
+			string kind=readString(_txt,ref pos,out result);
+			if(!result)
+			{
+				#if THING
+				Debug.LogWarning(string.Format("Cannot read operation in string at pos: {0} ",pos));
+				#endif
+				res=false;
+				return null;
+			}
+			if (kind == "}") //end of operation list
+			{
+				res=true;
+				return null;
+			}
+			Operation ret=null;
+			List<object> args=new List<object>();
+			switch (kind)
+			{
+			case "tag_set":{
+				string tag=readString(_txt,ref pos,out result);
+
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(tag);
+				ret=new Operation(Operation.Commands.TAG_SET);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "tag_switch":{
+				string tag_from=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				string tag_to=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(tag_from);
+				args.Add(tag_to);
+				ret=new Operation(Operation.Commands.TAG_SWITCH);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "set":{
+				string settarg=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				string tag_to=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(settarg);
+				args.Add(tag_to);
+				ret=new Operation(Operation.Commands.VALUE_SET);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "add":{
+				string settarg=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				string tag_to=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(settarg);
+				if(tag_to.StartsWith(_dr))
+				{
+				args.Add(tag_to);
+				}
+				else
+				{
+					float np=0;
+					if(!float.TryParse(tag_to,out np))
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+						#endif
+						res=false;
+						return null;
+					}
+					args.Add(np);
+				}
+				ret=new Operation(Operation.Commands.ADD);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "sub":{
+				string settarg=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				string tag_to=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(settarg);
+				if(tag_to.StartsWith(_dr))
+				{
+					args.Add(tag_to);
+				}
+				else
+				{
+					float np=0;
+					if(!float.TryParse(tag_to,out np))
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+						#endif
+						res=false;
+						return null;
+					}
+					args.Add(np);
+				}
+				ret=new Operation(Operation.Commands.SUBTRACT);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "mul":{
+				string settarg=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				string tag_to=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(settarg);
+				if(tag_to.StartsWith(_dr))
+				{
+					args.Add(tag_to);
+				}
+				else
+				{
+					float np=0;
+					if(!float.TryParse(tag_to,out np))
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+						#endif
+						res=false;
+						return null;
+					}
+					args.Add(np);
+				}
+				ret=new Operation(Operation.Commands.MULTIPLY);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "div":{
+				string settarg=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_from name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				string tag_to=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag_to name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(settarg);
+				if(tag_to.StartsWith(_dr))
+				{
+					args.Add(tag_to);
+				}
+				else
+				{
+					float np=0;
+					if(!float.TryParse(tag_to,out np))
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Invalid float value: {0} ",tag_to));
+						#endif
+						res=false;
+						return null;
+					}
+					args.Add(np);
+				}
+				ret=new Operation(Operation.Commands.DIVIDE);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "abort":
+			{
+				ret=new Operation(Operation.Commands.ABORT);
+				res=true;
+				return ret;
+			}
+			case "continue":
+			{
+				ret=new Operation(Operation.Commands.CONTINUE);
+				res=true;
+				return ret;
+			}
+
+			case "return":
+			{
+				Operation retval=readOperation(_txt,ref pos,out result);
+				if(!result||retval==null)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read returned command  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(retval);
+				ret=new Operation(Operation.Commands.RETURN);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "foreach":
+			{
+				string listval=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read foreach list  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				string ob=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read foreach at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				if(ob!="{")
+				{
+					#if THING
+					Debug.LogWarning(string.Format("No opening bracket, this: {0} ",ob));
+					#endif
+					res=false;
+					return null;
+				}
+				List<Operation> lst=readOperationList(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read foreach operations at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+
+				args.Add(listval);
+				args.Add(lst);
+				ret=new Operation(Operation.Commands.FOREACH);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "target":
+			{
+				string condname=readString(_txt,ref pos,out result);
+				Condition a1=null;
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read target condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				if(condname=="condition")
+				{
+					a1=readCondition(_txt,ref pos,out result);
+					if(!result){
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read target cond  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;}
+
+				}
+				else
+				{
+                                 if(!_context.TryGetValue(condname,out a1))
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+						#endif
+						res=false;
+						return null;
+					}
+				}
+				args.Add(a1);
+				string listname=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read target list at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(listname);
+
+				ret=new Operation(Operation.Commands.TARGET);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "accumulate":
+			{
+				string condname=readString(_txt,ref pos,out result);
+				Condition a1=null;
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				if(condname=="condition")
+				{
+					a1=readCondition(_txt,ref pos,out result);
+					if(!result){
+						#if THING
+						Debug.LogWarning(string.Format("Couldn't read accumulate cond  at pos: {0} ",pos));
+						#endif
+						res=false;
+						return null;}
+					
+				}
+				else
+				{
+					if(!_context.TryGetValue(condname,out a1))
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+						#endif
+						res=false;
+						return null;
+					}
+				}
+				args.Add(a1);
+				string listname=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate list at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(listname);
+				string assignname=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate targ list at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(assignname);
+				ret=new Operation(Operation.Commands.ACCUMULATE);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "clear":
+			{
+				string valname=readString(_txt,ref pos,out result);
+
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+
+				args.Add(valname);
+				ret=new Operation(Operation.Commands.CLEAR);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "hook":
+			{
+				string hookname=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(hookname);
+				string dataname=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(dataname);
+				ret=new Operation(Operation.Commands.HOOK);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+
+			case "choice":
+			{
+				string choice_name=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(choice_name);
+				string list_name=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(list_name);
+				string ret_name=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(ret_name);
+				ret=new Operation(Operation.Commands.CHOICE);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "new":
+			{
+				string var_name=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(var_name);
+
+				ret=new Operation(Operation.Commands.NEW);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "pop":
+			{
+				string list_name=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(list_name);
+				string vn=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(vn);
+				ret=new Operation(Operation.Commands.POP);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "push":
+			{
+				string list_name=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(list_name);
+				string vn=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(vn);
+				ret=new Operation(Operation.Commands.PUSH);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "shift":
+			{
+				string list_name=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(list_name);
+				string vn=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(vn);
+				ret=new Operation(Operation.Commands.SHIFT);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "append":
+			{
+				string list_name=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(list_name);
+				string vn=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(vn);
+				ret=new Operation(Operation.Commands.APPEND);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "remove":
+			{
+				string list_name=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(list_name);
+				string vn=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(vn);
+				ret=new Operation(Operation.Commands.REMOVE);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			case "any":
+			{
+				string list_name=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(list_name);
+				string vn=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(vn);
+				ret=new Operation(Operation.Commands.ANY);
+				ret[_args]=args;
+				res=true;
+				return ret;
+			}
+			
+			default:
+			 {
+				#if THING
+				Debug.LogWarning(string.Format("Invalid command name at pos: {0} ",pos));
+				#endif
+				res=false;
+				return null;
+ 			  }
+ 			}
+		}
 		public static Condition readCondition(string _txt,ref int pos,out bool res) //after condition keyword, though not always?
 		{
 			bool result;
@@ -1887,12 +2748,7 @@ public class SingleGame
 							ret=new Condition(Condition.Type.MULTI_OR,"_noname", pars);
 							
 						}break;
-							/*
 
-and {<condition 1>  <condition 2> <condition ...> }
-or {<condition 1>  <condition 2> <condition ...> }
-
-*/
 						default:
 						{
 							#if THING
