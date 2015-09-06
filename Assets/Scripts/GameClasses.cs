@@ -2364,6 +2364,14 @@ public class SingleGame
      
       return Commands.ERROR;
     }
+    public void uplink()
+    {
+      IList args=this[_args] as IList;
+      for(int i=0;i<args.Count;i++)
+      {
+        this["arg"+i]=args[i];
+      }
+    }
 		public Operation(Commands com)
 		{
 			_command=com;
@@ -2412,53 +2420,53 @@ public class SingleGame
 			if(stack.hasTag(TAG_ABORT))
 				return;
 			Conditional target=stack[_target] as Conditional;
-			IList args=this[_args] as IList;
+			//IList args=this[_args] as IList;
 			switch(_command)
 			{
 			case Commands.TAG_SET:
 				{
-					target.setTag(args[0] as string);}
+					target.setTag(this["arg0"] as string);}
 				break;
 			case Commands.TAG_SWITCH:
 				{
-					if(target.hasTag(args[0] as string))
+        if(target.hasTag(this["arg0"] as string))
 					{
-						target.removeTag(args[0] as string);
-						target.setTag(args[1] as string);
+          target.removeTag(this["arg0"] as string);
+          target.setTag(this["arg1"] as string);
 					}
 				}
 				break;
 			case Commands.VALUE_SET:
 				{
-					if(args[1]is string&&(args[1] as string).StartsWith(_dr))
+        if(this["arg1"]is string&&(this["arg1"] as string).StartsWith(_dr))
 					{
-						target[args[0] as string]=stack[(args[1] as string).Substring(_drl)];
+          target[this["arg0"] as string]=stack[(this["arg1"] as string).Substring(_drl)];
 					} else
-						target[args[0] as string]=args[1];}
+          target[this["arg0"] as string]=this["arg1"];}
 				break;
 			case Commands.ADD:
 				{
-					object a1=target[args[0] as string];
-					object a2=deRef(args[1], stack);
-					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2), a1.GetType());}
+        object a1=target[this["arg0"] as string];
+        object a2=deRef(this["arg1"], stack);
+        target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.SUBTRACT:
 				{
-					object a1=target[args[0] as string];
-					object a2=deRef(args[1], stack);
-					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2), a1.GetType());}
+        object a1=target[this["arg0"] as string];
+        object a2=deRef(this["arg1"], stack);
+        target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.MULTIPLY:
 				{
-					object a1=target[args[0] as string];
-					object a2=deRef(args[1], stack);
-					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2), a1.GetType());}
+					object a1=target[this["arg0"] as string];
+					object a2=deRef(this["arg1"], stack);
+					target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.DIVIDE:
 				{
-					object a1=target[args[0] as string];
-					object a2=deRef(args[1], stack);
-					target[args[0] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2), a1.GetType());}
+					object a1=target[this["arg0"] as string];
+					object a2=deRef(this["arg1"], stack);
+					target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.ABORT:
 				{
@@ -2472,7 +2480,7 @@ public class SingleGame
 				break;
 			case Commands.NEW:
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					if(stack[nm] as Conditional==null)
 						stack[nm]=new Conditional();
 				}
@@ -2480,13 +2488,13 @@ public class SingleGame
 			case Commands.RETURN: //argument :  returned command/operation
 				{
 					stack.setTag(TAG_RETURN);
-					stack[_returnValue]=args[0] as Operation;
+					stack[_returnValue]=this["arg0"] as Operation;
 				}
 				break;
-			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack args[1]->list of commands
+			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack this["arg1"]->list of commands
 				{
         object oldtarget=stack[_target];
-					string lname=args[0] as string;
+					string lname=this["arg0"] as string;
 					if(stack[lname]!=null)
 					{
 						IList lst=stack[lname] as IList;
@@ -2503,7 +2511,7 @@ public class SingleGame
 								} else
 								{
 									stack[_target]=newtarget;
-									executeList(args[1], stack);
+									executeList(this["arg1"], stack);
 									if(stack.hasTag(TAG_ABORT))
 										return;
 									stack.removeTag(TAG_CONTINUE);
@@ -2522,19 +2530,19 @@ public class SingleGame
 			case Commands.TARGET://will assign _targetList? value in stack arg0 - condition, arg1 - list, equivalent of accumulate for specific list
 				{
 					List<Conditional> targs=new List<Conditional>();
-					Condition baseCond=args[0] as Condition;
+					Condition baseCond=this["arg0"] as Condition;
 					if(baseCond==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid target condition : {0}", args[0]));
+						Debug.Log(string.Format("Invalid target condition : {0}", this["arg0"]));
 						#endif
 						return;
 					}
-					IList vars=stack[args[1] as string] as IList;
+					IList vars=stack[this["arg1"] as string] as IList;
 					if(vars==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid target list : {0}", args[1]));
+						Debug.Log(string.Format("Invalid target list : {0}", this["arg1"]));
 						#endif
 						return;
 					}
@@ -2551,26 +2559,26 @@ public class SingleGame
 			case Commands.ACCUMULATE://will assign arg2 value in stack arg0 - condition, arg1 - list. appends to list if it exists
 				{
 					List<Conditional> targs=new List<Conditional>();
-					string listname=args[2] as string;
+					string listname=this["arg2"] as string;
 					IList oldList=stack[listname] as IList;
 					if(oldList!=null)
 					{
 						foreach(object l in oldList)
 							targs.Add(l as Conditional);
 					}
-					Condition baseCond=args[0] as Condition;
+					Condition baseCond=this["arg0"] as Condition;
 					if(baseCond==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid target condition : {0}", args[0]));
+						Debug.Log(string.Format("Invalid target condition : {0}", this["arg0"]));
 						#endif
 						return;
 					}
-					IList vars=stack[args[1] as string] as IList;
+					IList vars=stack[this["arg1"] as string] as IList;
 					if(vars==null)
 					{
 						#if THING
-						Debug.Log(string.Format("Invalid target list : {0}", args[1]));
+						Debug.Log(string.Format("Invalid target list : {0}", this["arg1"]));
 						#endif
 						return;
 					}
@@ -2586,7 +2594,7 @@ public class SingleGame
 				break;
 			case Commands.CLEAR:
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					if(nm!=null)
 						stack[nm]=null;
 				}
@@ -2594,9 +2602,9 @@ public class SingleGame
 				break;
 			case Commands.POP: //arg0 - list name, arg1- stackvar
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					IList lst=stack[nm] as IList;
-					string retname=args[1] as string;
+					string retname=this["arg1"] as string;
 					if(lst!=null&&retname!=null)
 					{
 						if(lst.Count>0)
@@ -2610,9 +2618,9 @@ public class SingleGame
 				break;
 			case Commands.PUSH: //arg0 - list name, arg1- stackvar
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					IList lst=stack[nm] as IList;
-					string retname=args[1] as string;
+					string retname=this["arg1"] as string;
 					if(lst==null)
 					{
 						lst=new List<object>();
@@ -2627,9 +2635,9 @@ public class SingleGame
 				break;
 			case Commands.SHIFT: //arg0 - list name, arg1- stackvar
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					IList lst=stack[nm] as IList;
-					string retname=args[1] as string;
+					string retname=this["arg1"] as string;
 					if(lst!=null&&retname!=null)
 					{
 						if(lst.Count>0)
@@ -2643,9 +2651,9 @@ public class SingleGame
 				break;
 			case Commands.APPEND: //arg0 - list name, arg1- stackvar
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					IList lst=stack[nm] as IList;
-					string retname=args[1] as string;
+					string retname=this["arg1"] as string;
 					if(lst==null)
 					{
 						lst=new List<object>();
@@ -2660,9 +2668,9 @@ public class SingleGame
 				break;
 			case Commands.REMOVE: // removes object from listarg0 - list name, arg1- stackvar
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					IList lst=stack[nm] as IList;
-					string retname=args[1] as string;
+					string retname=this["arg1"] as string;
 					if(lst==null)
 					{
 						lst=new List<object>();
@@ -2677,9 +2685,9 @@ public class SingleGame
 				break;
 			case Commands.ANY: //get any (random) in list without deleting arg0 - list name, arg1- stackvar
 				{
-					string nm=args[0] as string;
+					string nm=this["arg0"] as string;
 					IList lst=stack[nm] as IList;
-					string retname=args[1] as string;
+					string retname=this["arg1"] as string;
 					if(lst!=null&&retname!=null)
 					{
 						if(lst.Count>0)
@@ -2694,16 +2702,16 @@ public class SingleGame
 				break;
 			case Commands.HOOK: //call hook of name with data
 				{
-					string nm=args[0] as string;
-					string nmData=args[1] as string;
+					string nm=this["arg0"] as string;
+					string nmData=this["arg1"] as string;
 					GameManager.startHook(nm, stack[nmData] as Conditional);
 				}
 				;
 				break;
 			case Commands.CHOICE: //call for player choice, store result  in arg2: 
 				{
-					string chname=args[0] as string;
-					string nm=args[1] as string;
+					string chname=this["arg0"] as string;
+					string nm=this["arg1"] as string;
 					IList lst=stack[nm] as IList;
 					if(lst==null)
 					{
@@ -2712,7 +2720,7 @@ public class SingleGame
 						#endif
 						return;
 					}
-					string nmRet=args[2] as string;
+					string nmRet=this["arg2"] as string;
 					Conditional ret=GameManager.startChoice(chname, lst);
 					stack[nmRet]=ret;
 				}
@@ -2787,7 +2795,10 @@ public class SingleGame
 									didActivate=true;
 									Operation ret=executeList(effect[_commands], createStack(stack, effect));
 									if(ret!=null)
+                  {
+                    ret.uplink();
 										ret.__pureExecute(stack);
+                  }
 									if(stack.hasTag(TAG_ABORT))
 										return;
 								}
@@ -2805,6 +2816,7 @@ public class SingleGame
 		}
 		public void _execute(Conditional stack)
 		{
+      uplink();
 			stack[_currentCommand]=this;
 			IList efs=stack[_effects] as IList;
 			if(efs==null)
