@@ -46,7 +46,8 @@ greater <string var_name> <float number>
 le <string var_name> <float number>
 ge <string var_name> <float number>
 true
-
+command_type <string var_name> <string command>
+command_arg <string var_name> <int argnum> <condition compare>
 
 Operations/commands (target is implicit, stack[_target]):
 

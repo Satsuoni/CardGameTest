@@ -18,3 +18,10 @@ function _commands
   push _Game.HAND _tmp  
   }
 }
+
+function testFunc
+{
+set Damage 10
+add Damage <=Damage
+
+}

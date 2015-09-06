@@ -1079,7 +1079,86 @@ public class SingleGame
               ret=new Condition(Condition.Type.MULTI_OR,"_noname", pars);
               
             }break;
+            case "command_type":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string cmptype=readString(_txt,ref pos,out result);
+              if(!result||Operation.getTypeFromString(cmptype)==Operation.Commands.ERROR)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} {1}",pos,cmptype));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.COMMAND_TYPE,varname,cmptype);
               
+            }break;
+            case "command_arg":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var type at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string cmptype=readString(_txt,ref pos,out result);
+              int prr=0;
+              if(!result||int.TryParse(cmptype,out prr))
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read compare value  at pos: {0} {1}",pos,cmptype));
+                #endif
+                res=false;
+                return null;
+              }
+              Condition tr;
+              string nxtpos=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var condition at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              if(nxtpos!="condition")
+              {
+                tr=getFromContext(nxtpos) as Condition;
+                if(tr==null)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition name:  {0} ",nxtpos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+                
+              }
+              else
+              {
+                tr=readCondition(_txt,ref pos,out result);
+                if(!result)
+                {
+                  #if THING
+                  Debug.LogWarning(string.Format("Invalid condition around:  {0} ",pos));
+                  #endif
+                  res=false;
+                  return null;
+                }
+              }
+              ret=new Condition(Condition.Type.COMMAND_ARG,varname,prr,tr);
+              
+            }break;
             default:
             {
               #if THING
@@ -1141,10 +1220,19 @@ public class SingleGame
         return null;
       }
       Operation ret=null;
-      List<object> args=new List<object>();
-      switch (kind)
+      Operation.Commands cmd=Operation.getTypeFromString(kind);
+      if(cmd==Operation.Commands.ERROR)
       {
-      case "tag_set":{
+        #if THING
+        Debug.LogWarning(string.Format("Invalid operation code: {0} ",kind));
+        #endif
+        res=false;
+        return null;
+      }
+      List<object> args=new List<object>();
+      switch (cmd)
+      {
+      case Operation.Commands.TAG_SET:{
         string tag=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1161,7 +1249,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "tag_switch":{
+      case Operation.Commands.TAG_SWITCH:{
         string tag_from=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1188,7 +1276,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "set":{
+      case Operation.Commands.VALUE_SET:{
         string settarg=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1215,7 +1303,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "add":{
+      case Operation.Commands.ADD:{
         string settarg=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1258,7 +1346,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "sub":{
+      case Operation.Commands.SUBTRACT:{
         string settarg=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1301,7 +1389,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "mul":{
+      case Operation.Commands.MULTIPLY:{
         string settarg=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1344,7 +1432,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "div":{
+      case Operation.Commands.DIVIDE:{
         string settarg=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1387,20 +1475,20 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "abort":
+      case Operation.Commands.ABORT:
       {
         ret=new Operation(Operation.Commands.ABORT);
         res=true;
         return ret;
       }
-      case "continue":
+      case Operation.Commands.CONTINUE:
       {
         ret=new Operation(Operation.Commands.CONTINUE);
         res=true;
         return ret;
       }
         
-      case "return":
+      case Operation.Commands.RETURN:
       {
         Operation retval=readOperation(_txt,ref pos,out result);
         if(!result||retval==null)
@@ -1417,7 +1505,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "foreach":
+      case Operation.Commands.FOREACH:
       {
         string listval=readString(_txt,ref pos,out result);
         if(!result)
@@ -1462,7 +1550,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "target":
+      case Operation.Commands.TARGET:
       {
         string condname=readString(_txt,ref pos,out result);
         Condition a1=null;
@@ -1515,7 +1603,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "accumulate":
+      case Operation.Commands.ACCUMULATE:
       {
         string condname=readString(_txt,ref pos,out result);
         Condition a1=null;
@@ -1577,7 +1665,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "clear":
+      case Operation.Commands.CLEAR:
       {
         string valname=readString(_txt,ref pos,out result);
         
@@ -1596,7 +1684,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "hook":
+      case Operation.Commands.HOOK:
       {
         string hookname=readString(_txt,ref pos,out result);
         
@@ -1628,7 +1716,7 @@ public class SingleGame
         return ret;
       }
         
-      case "choice":
+      case Operation.Commands.CHOICE:
       {
         string choice_name=readString(_txt,ref pos,out result);
         
@@ -1671,7 +1759,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "new":
+      case Operation.Commands.NEW:
       {
         string var_name=readString(_txt,ref pos,out result);
         if(!result)
@@ -1690,7 +1778,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "pop":
+      case Operation.Commands.POP:
       {
         string list_name=readString(_txt,ref pos,out result);
         if(!result)
@@ -1719,7 +1807,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "push":
+      case Operation.Commands.PUSH:
       {
         string list_name=readString(_txt,ref pos,out result);
         if(!result)
@@ -1748,7 +1836,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "shift":
+      case Operation.Commands.SHIFT:
       {
         string list_name=readString(_txt,ref pos,out result);
         if(!result)
@@ -1777,7 +1865,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "append":
+      case Operation.Commands.APPEND:
       {
         string list_name=readString(_txt,ref pos,out result);
         if(!result)
@@ -1806,7 +1894,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "remove":
+      case Operation.Commands.REMOVE:
       {
         string list_name=readString(_txt,ref pos,out result);
         if(!result)
@@ -1835,7 +1923,7 @@ public class SingleGame
         res=true;
         return ret;
       }
-      case "any":
+      case Operation.Commands.ANY:
       {
         string list_name=readString(_txt,ref pos,out result);
         if(!result)
@@ -2171,6 +2259,17 @@ public class SingleGame
 		{
 			TextAsset ass=Resources.Load("draw") as TextAsset;
 			_GameData=Conditional.loadFromString(ass.text); //a test, for now..
+      IList testop=_GameData["testFunc"] as IList;
+      Conditional tstack=new Conditional();
+      tstack[_target]=tstack;
+      Debug.Log("testop");
+      foreach(object o in testop)
+      {
+        Operation op=o as Operation;
+        op._execute(tstack);
+      }
+      Debug.Log(tstack["Damage"]);
+      Debug.Log("endtestop");
 			List<Conditional> deck=new List<Conditional>();
 			for(int i=0; i<30; i++)
 				deck.Add(generateRandomCardTemplate());
@@ -2182,40 +2281,7 @@ public class SingleGame
 			Debug.Log(drawRule[_commands]);
 			Debug.Log(drawRule[_condition]);
 			// new Conditional();
-			/*Condition compareto7=new Condition(Condition.Type.LESS, _count, 7);
-			Condition count=new Condition(Condition.Type.COMPOUND_COUNT, _Game+".HAND", new Condition(Condition.Type.TRUE, ""), compareto7);
-
-			drawRule[_condition]=count;
-			List<Operation> seq=new List<Operation>();
-			Operation a1=new Operation(Operation.Commands.ANY);
-			List<object> arg1=new List<object>();
-			arg1.Add(_Game+".DECK");
-			arg1.Add("_tmp");
-			a1[_args]=arg1;
-			seq.Add(a1);
-
-			a1=new Operation(Operation.Commands.REMOVE);
-			arg1=new List<object>();
-			arg1.Add(_Game+".DECK");
-			arg1.Add("_tmp");
-			a1[_args]=arg1;
-			seq.Add(a1);
-
-			a1=new Operation(Operation.Commands.HOOK);
-			arg1=new List<object>();
-			arg1.Add("draw");
-			arg1.Add("_tmp");
-			a1[_args]=arg1;
-			seq.Add(a1);
-
-			a1=new Operation(Operation.Commands.PUSH);
-			arg1=new List<object>();
-			arg1.Add(_Game+".HAND");
-			arg1.Add("_tmp");
-			a1[_args]=arg1;
-			seq.Add(a1);
-
-			drawRule[_commands]=seq;*/
+			
 			effs.Add(drawRule);
 			_GameData[_effects]=effs;
 		}
@@ -2263,8 +2329,41 @@ public class SingleGame
 			SHIFT,//get last and delete
 			REMOVE,
 			ANY, //get any in list without deleting
+      ERROR
 		}
 		Commands _command;
+    public Commands command{get{return _command;}}
+    public static Commands getTypeFromString(string str)
+    {
+      switch(str)
+      {
+      case "tag_set":return Commands.TAG_SET;
+      case "tag_switch":return Commands.TAG_SWITCH;
+      case "set":return Commands.VALUE_SET;
+      case "add":return Commands.ADD;
+      case "sub":return Commands.SUBTRACT;
+      case "mul":return Commands.MULTIPLY;
+      case "div":return Commands.DIVIDE;
+      case "abort":return Commands.ABORT;
+      case "continue":return Commands.CONTINUE;
+      case "return":return Commands.RETURN;
+      case "foreach":return Commands.FOREACH;
+      case "target":return Commands.TARGET;
+      case "accumulate":return Commands.ACCUMULATE;
+      case "clear":return Commands.CLEAR;
+      case "hook":return Commands.HOOK;
+      case "choice":return Commands.CHOICE;
+      case "new":return Commands.NEW;
+      case "pop":return Commands.POP;
+      case "push":return Commands.PUSH;
+      case "shift":return Commands.SHIFT;
+      case "append":return Commands.APPEND;
+      case "remove":return Commands.REMOVE;
+      case "any":return Commands.ANY;
+      }
+     
+      return Commands.ERROR;
+    }
 		public Operation(Commands com)
 		{
 			_command=com;
@@ -2284,7 +2383,7 @@ public class SingleGame
 					Conditional efContain=new Conditional();
 					if(eff.hasTag(TAG_STACKED))
 						efContain.setTag(TAG_STACKED);
-					if(eff==exeffect)
+          if(eff[_effect]==exeffect)
 					{
 						Debug.Log(string.Format("Stacking: {0}", ef));
 						efContain.setTag(TAG_STACKED);
@@ -2386,6 +2485,7 @@ public class SingleGame
 				break;
 			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack args[1]->list of commands
 				{
+        object oldtarget=stack[_target];
 					string lname=args[0] as string;
 					if(stack[lname]!=null)
 					{
@@ -2416,6 +2516,7 @@ public class SingleGame
 							#endif
 						}
 					}
+        stack[_target]=oldtarget;
 				}
 				break;
 			case Commands.TARGET://will assign _targetList? value in stack arg0 - condition, arg1 - list, equivalent of accumulate for specific list
@@ -2752,7 +2853,10 @@ public class SingleGame
 			GREATER,
 			LE,
 			GE,
-			TRUE
+			TRUE,
+      ///for commands/operations
+      COMMAND_TYPE,
+      COMMAND_ARG
 		}
 		public bool inverse;
 		public Type type;
@@ -2789,6 +2893,40 @@ public class SingleGame
 			if(type==Type.TRUE)
 				return true;
 			string variable=variables;
+      if(type==Type.COMMAND_TYPE)
+      {
+        if(values.Length<1)
+          return false;
+        object var=cnd[variable];
+        if(var==null||!(var is Operation))
+        {
+          return false;
+        }
+        Operation op= var as Operation;
+        string cndn=values[0] as string;
+        Operation.Commands cmd=Operation.getTypeFromString(cndn);
+        if(cmd==Operation.Commands.ERROR) return false;
+        return (op.command==cmd);
+      }
+      if(type==Type.COMMAND_ARG)
+      {
+        if(values.Length<2)
+          return false;
+        object var=cnd[variable];
+        if(var==null||!(var is Operation))
+        {
+          return false;
+        }
+        Operation op= var as Operation;
+        int nm=(int)values[0];
+        Condition scond=values[1] as Condition;
+        if(scond==null) return false;
+        IList lsta=op[_args] as IList;
+        if(lsta.Count<=nm) return false;
+        Conditional secval=new Conditional();
+        secval["_arg"]=lsta[nm];
+        return scond.isFulfilled(secval);
+      }
 			/*if(variables.Length==0) return false;
 			if(variables.Length>1)
 			{
