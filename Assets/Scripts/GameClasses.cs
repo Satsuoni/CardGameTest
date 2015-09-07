@@ -257,6 +257,12 @@ public class SingleGame
         if(first=="}") break;
         switch(first)
         {
+        case "tag":
+        {
+          string tagname=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          this.setTag(tagname);
+        }break;
         case "int":
         {
           string nm=readString(_txt,ref pos,out result); 
@@ -343,6 +349,36 @@ public class SingleGame
           readConditional(_txt,ref pos,out result); 
           if(!result) return false;
         }break;
+				case "list":
+				{
+          string nm=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          string br=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          if(br!="{") return false;
+          List<Conditional> lst=new List<Conditional>();
+          string crn=readString(_txt,ref pos,out result); 
+          if(!result) return false;
+          while(crn!="}")
+          {
+           if(crn=="conditional")
+            {
+             // _parentl;
+					  Conditional listmem=readConditional(_txt,ref pos,out result); 
+              if(!result) return false;
+              lst.Add (listmem);
+            }
+            else
+            {
+              Conditional listmem=getFromContext(crn) as Conditional;
+              if(listmem==null) return false;
+              lst.Add (listmem);
+            }
+            crn=readString(_txt,ref pos,out result); 
+            if(!result) return false;
+          }
+					this[nm]=lst;
+				}break;
 				case "function":
 				{
 					readFunction(_txt,ref pos,out result); 
@@ -664,7 +700,7 @@ public class SingleGame
                 res=false;
                 return null;
               }
-              ret=new Condition(Condition.Type.TAG,varname,compval);
+              ret=new Condition(Condition.Type.STRING,varname,compval);
             }break;
               
             case "any":{
@@ -2116,7 +2152,7 @@ public class SingleGame
 			stack[_effects]=wrappedEffects;
 			stack[_target]=null;
 
-
+      Debug.Log(string.Format("effects : {0}",wrappedEffects.Count));
 			while(runThread)
 			{
 				foreach(object obj in rulesAndEffects)
@@ -2132,6 +2168,7 @@ public class SingleGame
 							Debug.Log(cnd);
 							Operation op=new Operation(Operation.Commands.NEW);
 							Conditional nstack=op.createStack(stack, eff);
+              //Debug.Log(string.Format("nstack effects : {0}",(nstack[_effects] as IList).Count));
 							op.executeList(eff[_commands], nstack);
 							if(nstack.hasTag(TAG_ABORT))
 							{
@@ -2259,7 +2296,7 @@ public class SingleGame
 		{
 			TextAsset ass=Resources.Load("draw") as TextAsset;
 			_GameData=Conditional.loadFromString(ass.text); //a test, for now..
-      IList testop=_GameData["testFunc"] as IList;
+      /*IList testop=_GameData["testFunc"] as IList;
       Conditional tstack=new Conditional();
       tstack[_target]=tstack;
       Debug.Log("testop");
@@ -2269,21 +2306,21 @@ public class SingleGame
         op._execute(tstack);
       }
       Debug.Log(tstack["Damage"]);
-      Debug.Log("endtestop");
+      Debug.Log("endtestop");*/
 			List<Conditional> deck=new List<Conditional>();
 			for(int i=0; i<30; i++)
 				deck.Add(generateRandomCardTemplate());
 			_GameData["DECK"]=deck;
 			_GameData["HAND"]=new List<Conditional>();
-			List<Conditional> effs=new List<Conditional>();
-			Conditional drawRule=_GameData["drawRule"] as Conditional;
-			Debug.Log(drawRule);
-			Debug.Log(drawRule[_commands]);
-			Debug.Log(drawRule[_condition]);
+			//List<Conditional> effs=new List<Conditional>();
+		//	Conditional drawRule=_GameData["drawRule"] as Conditional;
+			//Debug.Log(drawRule);
+			//Debug.Log(drawRule[_commands]);
+			//Debug.Log(drawRule[_condition]);
 			// new Conditional();
 			
-			effs.Add(drawRule);
-			_GameData[_effects]=effs;
+			//effs.Add(drawRule);
+			//_GameData[_effects]=effs;
 		}
 		public void Start()
 		{
@@ -2385,6 +2422,7 @@ public class SingleGame
 			else
 			{
 				IList elist=oldstack[_effects] as IList;
+  
 				foreach(object ef in elist)
 				{
 					Conditional eff=ef as Conditional;
@@ -2393,10 +2431,13 @@ public class SingleGame
 						efContain.setTag(TAG_STACKED);
           if(eff[_effect]==exeffect)
 					{
+            continue;//maybe just skip it??
 						Debug.Log(string.Format("Stacking: {0}", ef));
 						efContain.setTag(TAG_STACKED);
+
 					}
 					efContain[_effect]=eff[_effect];
+          efs.Add(efContain);
 				}
 				ret[_effects]=efs;
 			}
@@ -2771,18 +2812,22 @@ public class SingleGame
 				if(preffect!=null)
 					preffect.removeTag(TAG_ACTIVATED);
 			}
+     // Debug.Log(efs.Count);
 			while(didActivate)
 			{
 				didActivate=false;
 				foreach(object o in efs)
 				{
+          //Debug.Log("effecting");
 					Conditional preffect=o as Conditional;
 					Conditional effect=null;
 					if(preffect!=null&&!preffect.hasTag(TAG_ACTIVATED)&&!preffect.hasTag(TAG_STACKED))
 					{
 						effect=preffect[_effect] as Conditional;
+           // Debug.Log(effect[_condition]);
 						if(effect.hasTag(tag))
 						{
+							//Debug.Log(tag);
 							Condition cn=effect[_condition] as Condition;
 							if(cn==null)
 							{
@@ -2791,6 +2836,7 @@ public class SingleGame
 							{
 								if(cn.isFulfilled(stack)) //execute effect
 								{
+
 									preffect.setTag(TAG_ACTIVATED);
 									didActivate=true;
 									Operation ret=executeList(effect[_commands], createStack(stack, effect));
@@ -2901,7 +2947,7 @@ public class SingleGame
 		}
 		protected bool __isFulfilled(Conditional cnd)
 		{
-
+     // Debug.Log(type);
 			if(type==Type.TRUE)
 				return true;
 			string variable=variables;
@@ -2915,8 +2961,10 @@ public class SingleGame
           return false;
         }
         Operation op= var as Operation;
+
         string cndn=values[0] as string;
         Operation.Commands cmd=Operation.getTypeFromString(cndn);
+      
         if(cmd==Operation.Commands.ERROR) return false;
         return (op.command==cmd);
       }
@@ -2957,11 +3005,13 @@ public class SingleGame
 
 			if(type==Type.TAG)
 				return cnd.hasTag(variable);
+
 			if(type==Type.STRING)
 			{
 				if(values.Length<1)
 					return false;
 				string val2=cnd[variable] as string;
+        //Debug.Log(val2);
 				if(val2==null)
 					return false;
 				return (val2==(values[0] as string));
@@ -3170,7 +3220,7 @@ public class SingleGame
 	{
 
 	}
-	public class Parser
+	/*public class Parser
 	{
 		static string _text;
 		static int rpos=0;
@@ -3191,7 +3241,7 @@ public class SingleGame
 			rpos=0;
 		}
 	
-	/*	public static string readParameter(string _txt,ref int pos,out bool res)
+		public static string readParameter(string _txt,ref int pos,out bool res)
 		{
 			//skip whitespace
 			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
@@ -3390,9 +3440,9 @@ public class SingleGame
 
 			}
 			return null;//TODO
-  } */
+  }
 
-	}
+	} */
 }
 
 

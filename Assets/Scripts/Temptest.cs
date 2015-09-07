@@ -19,7 +19,7 @@ public class Temptest : MonoBehaviour {
 		string st=System.Text.Encoding.UTF8.GetString(ta.bytes);
 
 		Debug.Log(char.IsWhiteSpace(st[0]));
-		Debug.Log('\n');
+//		Debug.Log('\n');
 		List<check1> ch=new List<check1>();
 		ch.Add(new check1());
 	/*	Debug.Log(ch is IList);

@@ -55,23 +55,23 @@ public class RectTransfer : MonoBehaviour, IAnimInterface {
 	RectTransform from;
 	RectTransform us;
 //	Rect start;
-	Rect reference;
+//	Rect reference;
 	Vector4 tovec;
 	Vector4 stvec;
 	// Use this for initialization
 	void Init()
 	{
-		Debug.Log("apply");
+//		Debug.Log("apply");
 		us=gameObject.GetComponent<RectTransform>();
 		from=us.parent as RectTransform;
 		us.SetParent(us.RootCanvasTransform());
 		us.SetInternalAnchors (new Vector4 (0, 0, 1, 1));
 		//start=us.rect;
-		reference=from.rect;
+		//reference=from.rect;
 		Rect rr = to.RootCanvasRect ();
-		Debug.Log(rr);
+	//	Debug.Log(rr);
 		tovec = (us.parent as RectTransform).getAnchorsFromCanvasRect (rr);
-		Debug.Log(tovec);
+	//	Debug.Log(tovec);
 		stvec = new Vector4 (us.anchorMin.x,us.anchorMin.y,us.anchorMax.x,us.anchorMax.y);
 	}
 	void Start () {

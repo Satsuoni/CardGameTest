@@ -52,6 +52,12 @@ public class GameUIManager : MonoBehaviour {
 		{
 			StartCoroutine(draw ());
 		}
+		if(name=="log")
+		{
+      Debug.Log("hooklog");
+			Debug.Log(data["text"]);
+			SingleGame.GameManager.endHook();
+		}
 	}
 	// Update is called once per frame
 	void Update () {

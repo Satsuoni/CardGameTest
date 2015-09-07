@@ -5,6 +5,11 @@ count _Game.HAND
       condition { less _count 7 }
 }
 
+conditional txt
+{
+string text "Called hook"
+}
+
 conditional drawRule
 {
 tag MAIN_RULE
@@ -19,9 +24,28 @@ function _commands
   }
 }
 
+conditional testRule
+{
+tag EXECUTE_PREFIX
+condition _condition {
+      and { condition { command_type _currentCommand push }
+           condition { strcomp _currentCommand.arg0 _Game.HAND } }
+          }
+function _commands 
+ {
+ hook log _Game.txt
+ }
+}
+
 function testFunc
 {
 set Damage 10
 add Damage <=Damage
 
+}
+
+list _effects
+{
+drawRule
+testRule
 }
