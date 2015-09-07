@@ -1,0 +1,23 @@
+conditional txt
+{
+string text "Called hook"
+}
+
+conditional txt2
+{
+string text "Called hick2"
+}
+
+conditional testRule
+{
+tag EXECUTE_PREFIX
+condition _condition {
+      and { condition { command_type _currentCommand push }
+           condition { strcomp _currentCommand.arg0 _Game.HAND } }
+          }
+function _commands 
+ {
+ hook log _Game.txt
+ return hook log _Game.txt2
+ }
+}

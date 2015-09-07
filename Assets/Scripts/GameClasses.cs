@@ -43,8 +43,10 @@ public class SingleGame
 	public const string _currentCommand="_currentCommand";
 	public const string _returnValue="_returnValue";
 	public const string _Game="_Game";
+	public const string _Owner="_Owner";
+	public const string _Opponent="_Opponent";
 	public const string _Source="_Source";
-	public static readonly string[] __stackValues={_Game};
+	public static readonly string[] __stackValues={_Game,_Owner,_Opponent};
 	public const string _template="_template";
 	public const string _cardName="_cardName";
 	public const string _cardText="_cardText";
@@ -109,7 +111,16 @@ public class SingleGame
 				object obj=keyp.Value;
 				if(obj is Conditional)
 				{
+					/*if(key!=_parentl)
+					{
+					Debug.Log(key);
 					ret._values[key]=(obj as Conditional).duplicate();
+					}*/
+					Conditional knd=obj as Conditional;
+					if(key!=_parentl&&knd.hasTag("DEEP_COPY"))
+						ret._values[key]=knd.duplicate();
+						else
+							ret._values[key]=obj;
 					continue;
 				}
 				if(obj is List<Conditional>)
@@ -234,7 +245,7 @@ public class SingleGame
       if(!ret.readInternalList(_txt+"}",ref pos))
       {
         #if THING
-        Debug.LogWarning(string.Format("Couldn't load consitional from string :{0} ",_txt));
+        Debug.LogWarning(string.Format("Couldn't load conditional from string :{0} ",_txt));
         #endif
         return null;
       }
@@ -492,6 +503,7 @@ public class SingleGame
           #endif
         }
         this[vname]=ret;
+        ret["__name"]=vname;
       }
       
       if(ret!=null) res=true;
@@ -1195,6 +1207,20 @@ public class SingleGame
               ret=new Condition(Condition.Type.COMMAND_ARG,varname,prr,tr);
               
             }break;
+			case "isset":{
+							string varname=readString(_txt,ref pos,out result);
+							if(!result)
+							{
+								#if THING
+								Debug.LogWarning(string.Format("Cannot read var name at pos: {0} ",pos));
+								#endif
+								res=false;
+								return null;
+							}
+
+							ret=new Condition(Condition.Type.ISSET,varname);
+							
+						}break;
             default:
             {
               #if THING
@@ -1801,7 +1827,7 @@ public class SingleGame
         if(!result)
         {
           #if THING
-          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          Debug.LogWarning(string.Format("Couldn't read new condition  at pos: {0} ",pos));
           #endif
           res=false;
           return null;
@@ -1810,6 +1836,25 @@ public class SingleGame
         args.Add(var_name);
         
         ret=new Operation(Operation.Commands.NEW);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+	  case Operation.Commands.NEWLIST:
+      {
+        string var_name=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read newlist condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(var_name);
+        
+        ret=new Operation(Operation.Commands.NEWLIST);
         ret[_args]=args;
         res=true;
         return ret;
@@ -2310,7 +2355,7 @@ public class SingleGame
 			List<Conditional> deck=new List<Conditional>();
 			for(int i=0; i<30; i++)
 				deck.Add(generateRandomCardTemplate());
-			_GameData["DECK"]=deck;
+			//_GameData["DECK"]=deck;
 			_GameData["HAND"]=new List<Conditional>();
 			//List<Conditional> effs=new List<Conditional>();
 		//	Conditional drawRule=_GameData["drawRule"] as Conditional;
@@ -2366,7 +2411,8 @@ public class SingleGame
 			SHIFT,//get last and delete
 			REMOVE,
 			ANY, //get any in list without deleting
-      ERROR
+			NEWLIST,
+			ERROR
 		}
 		Commands _command;
     public Commands command{get{return _command;}}
@@ -2391,6 +2437,7 @@ public class SingleGame
       case "hook":return Commands.HOOK;
       case "choice":return Commands.CHOICE;
       case "new":return Commands.NEW;
+	  case "newlist":return Commands.NEWLIST;
       case "pop":return Commands.POP;
       case "push":return Commands.PUSH;
       case "shift":return Commands.SHIFT;
@@ -2432,8 +2479,8 @@ public class SingleGame
           if(eff[_effect]==exeffect)
 					{
             continue;//maybe just skip it??
-						Debug.Log(string.Format("Stacking: {0}", ef));
-						efContain.setTag(TAG_STACKED);
+//						Debug.Log(string.Format("Stacking: {0}", ef));
+				//		efContain.setTag(TAG_STACKED);
 
 					}
 					efContain[_effect]=eff[_effect];
@@ -2481,7 +2528,7 @@ public class SingleGame
 				{
         if(this["arg1"]is string&&(this["arg1"] as string).StartsWith(_dr))
 					{
-          target[this["arg0"] as string]=stack[(this["arg1"] as string).Substring(_drl)];
+				     target[this["arg0"] as string]=stack[(this["arg1"] as string).Substring(_drl)];
 					} else
           target[this["arg0"] as string]=this["arg1"];}
 				break;
@@ -2525,6 +2572,13 @@ public class SingleGame
 					if(stack[nm] as Conditional==null)
 						stack[nm]=new Conditional();
 				}
+				break;
+			case Commands.NEWLIST:
+			{
+				string nm=this["arg0"] as string;
+				if(stack[nm] as IList==null)
+					stack[nm]=new List<Conditional>();
+			}
 				break;
 			case Commands.RETURN: //argument :  returned command/operation
 				{
@@ -2843,6 +2897,7 @@ public class SingleGame
 									if(ret!=null)
                   {
                     ret.uplink();
+                   
 										ret.__pureExecute(stack);
                   }
 									if(stack.hasTag(TAG_ABORT))
@@ -2855,6 +2910,7 @@ public class SingleGame
 					
 					} else
 					{
+            if(preffect==null)
 						Debug.Log(string.Format("Invalid effect {0}", o));
 					}
 				}
@@ -2914,7 +2970,8 @@ public class SingleGame
 			TRUE,
       ///for commands/operations
       COMMAND_TYPE,
-      COMMAND_ARG
+      COMMAND_ARG,
+			ISSET
 		}
 		public bool inverse;
 		public Type type;
@@ -2951,6 +3008,12 @@ public class SingleGame
 			if(type==Type.TRUE)
 				return true;
 			string variable=variables;
+      if(type==Type.ISSET)
+			{
+				object var=cnd[variable];
+				if(var!=null) return true;
+				return false;
+			}
       if(type==Type.COMMAND_TYPE)
       {
         if(values.Length<1)
@@ -3057,8 +3120,7 @@ public class SingleGame
 					return false;
 				if(type==Type.COMPOUND_COUNT)
 				{
-          //Debug.Log("Count!!");
-         // Debug.Log(variables);
+       
 					Condition cnd2=values[1] as Condition;
 					if(cnd2==null)
 						return false;
@@ -3216,233 +3278,7 @@ public class SingleGame
 		}
 	}
 
-	public class EffectList
-	{
 
-	}
-	/*public class Parser
-	{
-		static string _text;
-		static int rpos=0;
-		enum types
-		{
-			CONDITION,
-			CONDITIONAL,
-			FUNCTION,
-			INT,
-			FLOAT, 
-			STRING
-		}
-		public static readonly string[] BaseTypes={ "condition", "conditional", "function", "int","float","string" };
-		public static Dictionary<string,object> _context=new Dictionary<string, object>();
-		public static void ParseIntoContext(string txt)
-		{
-			_text=txt;
-			rpos=0;
-		}
-	
-		public static string readParameter(string _txt,ref int pos,out bool res)
-		{
-			//skip whitespace
-			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
-			res=true;
-			if(pos==_txt.Length) 
-			{
-				#if THING
-				Debug.LogWarning("no string encountered until end of file in Parameter read");
-				#endif
-				res=false;
-				return null;
-			}
-			StringBuilder ret=new StringBuilder();
-			if(_txt[pos]==')')
-			 {
-				#if THING
-				Debug.Log("Parameter expected, but ) encountered - might be OK");
-				#endif
-				res=false;
-				return null;
-			 }
-			if(_txt[pos]==',')
-			{
-				#if THING
-				Debug.Log("Parameter expected, but , encountered - parameter assumed empty");
-				#endif
-				res=true;
-				return "";
-			}
-			if(_txt[pos]=='"') //opening quote
-			{
-				pos++;
-				while(pos<_txt.Length&&_txt[pos]!='"')
-				{
-					if(_txt[pos]!='\\')
-						ret.Append(_txt[pos]);
-					else
-					{
-						pos++;
-						if(pos<_txt.Length) ret.Append(_txt[pos]);
-					}
-					pos++;
-				}
-				if(pos==_txt.Length)
-				{
-					#if THING
-					Debug.LogWarning("no end quote encountered");
-					#endif
-					res=false;
-					return null;
-				}
-				pos++;
-
-			}// end quote
-			else
-			{
-				while(pos<_txt.Length&&!char.IsWhiteSpace(_txt[pos])&&_txt[pos]!=','&&_txt[pos]!=')') 
-				{
-					ret.Append(_txt[pos]);
-					pos++;
-				}
-			}
-
-
-			while(pos<_txt.Length&&char.IsWhiteSpace(_txt[pos])) pos++;
-			if(_txt[pos]!=','&&_txt[pos]!=')')
-			{
-				#if THING
-				Debug.LogWarning(string.Format("Invalid syntax in string at pos: {0} - should be ) or , but is {1}",pos,_txt[pos]));
-				#endif
-				
-				res=false;
-				return ret.ToString();
-			}
-			if(_txt[pos]==',')
-				pos++;
-			return ret.ToString();
-
-
-		}*/
-
-		/*public static T readTypeCast<T>(string _txt,ref int pos,out bool res)
-		{
-			bool strd=false;
-			string rstr=readString(_txt,ref pos,out strd);
-			if(!strd)
-			{
-				res=false;
-				return default(T);
-			}
-			T ret=default(T);
-			try
-			{
-				ret=(T)System.ComponentModel.TypeDescriptor.GetConverter(typeof(T)).ConvertFromString(rstr);
-				res=true;
-			}
-			catch
-			{
-				res=false;
-			}
-			
-			return (T)ret;
-
-		}*/
-
-		/*public static object readDefinition(string _txt,ref int pos,out bool res)
-		{
-			bool result=false;
-			object ret=null;
-			res=false;
-			string type=readString(_txt,ref pos,out result);
-			if(!result)
-			{
-				#if THING
-				Debug.LogWarning(string.Format("Cannot read definition in string at pos: {0} - type missing",pos));
-				#endif
-				res=false;
-				return null;
-			}
-			if(System.Array.IndexOf(BaseTypes,type)==-1&&!_context.ContainsKey(type))
-			{
-				#if THING
-				Debug.LogWarning(string.Format("Cannot read definition in string at pos: {0} - invalid type {1}",pos,type));
-				#endif
-				res=false;
-				return null;
-			}
-			string name=readString(_txt,ref pos,out result);
-			if(!result)
-			{
-				#if THING
-				Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - invalid name",pos));
-				#endif
-				res=false;
-				return null;
-			}
-			string def=readString(_txt,ref pos,out result);
-			bool parametricDefinition=false;
-			List<string> pars=new List<string>();
-			if(def[0]=='(')//parameters
-			{
-				pos=pos-def.Length+1;
-				bool parread=false;
-
-				string par=readParameter(_txt,ref pos,out parread);
-				while(parread&&_txt[pos]!=')')
-				{
-					pars.Add(par);
-					par=readParameter(_txt,ref pos,out parread);
-				}
-				if(_txt[pos]!=')')
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - invalid parameter definition",pos));
-					#endif
-					res=false;
-					return null;
-				}
-				parametricDefinition=true;
-				def=readString(_txt,ref pos,out result);
-			}
-			if(def[0]!='{') //alias
-			{
-				if(!_context.ContainsKey(def))
-				{
-					#if THING
-					Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - unknown alias {1}",pos,def));
-					#endif
-					res=false;
-					return null;
-				}
-				object alias=_context[def];
-				/*if(alias is Parametric)
-				{
-					def=readString(_txt,ref pos,out result);
-					if(!result||def[0]!='(')
-					{
-						#if THING
-						Debug.LogWarning(string.Format("Cannot read definition in string at  end pos: {0} - parametric alias without parameters",pos));
-						#endif
-						res=false;
-						return null;
-					}
-					pos=pos-def.Length+1;
-
-				}
-				else
-				{
-					ret=alias;
-				}
-				def=readString(_txt,ref pos,out result);
-			}
-			if(System.Array.IndexOf(BaseTypes,type)!=-1)
-			{
-				//it is one of the base types. Switch.
-
-			}
-			return null;//TODO
-  }
-
-	} */
 }
 
 

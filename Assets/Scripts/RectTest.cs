@@ -7,9 +7,9 @@ public class RectTest : MonoBehaviour {
 	void Start () {
 		RectTransform tr=gameObject.GetComponent<RectTransform>();
 		if(tr==null) return;
-		string st="condition countHand {  and{ condition { true } condition { less _count 7 } condition { greater _count 7 }  }}";
+		/*string st="condition countHand {  and{ condition { true } condition { less _count 7 } condition { greater _count 7 }  }}";
 		int pos=0;
-		bool res=false;
+		bool res=false;*/
 		//SingleGame.Condition cnd=SingleGame.Parser.readCondition(st,ref pos,out res);
     TextAsset ass=Resources.Load("draw") as TextAsset;
     Debug.Log(ass.text);

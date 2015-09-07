@@ -48,6 +48,7 @@ ge <string var_name> <float number>
 true
 command_type <string var_name> <string command>
 command_arg <string var_name> <int argnum> <condition compare>
+isset <string var_name>
 
 Operations/commands (target is implicit, stack[_target]):
 
@@ -68,9 +69,41 @@ clear <string stack_name>
 hook <string hook_name> <string data_name>
 choice <string choice_name> <string list_name> <string ret_name>
 new <string var_name>
+newlist <string var_name>
 pop <string list_name> <string ret_value>
 push <string list_name> <string value>
 shift <string list_name> <string ret_value>
 append <string list_name> <string value>
 remove <string list_name> <string stack_name>
 any <string list_name> <string ret_value>
+
+
+Special tags and values: 
+EXECUTE_PREFIX
+EXECUTE_POSTFIX
+_count="_count";
+_delay="_delay"; //timeline delay for Event
+_target="_target";
+_targetList="_targetList";
+_value="_value";
+_args="_arguments";
+_effects="_effects";
+_effect="_effect";
+_parent="_parent";
+_condition="_condition";
+_commands="_commands";
+_currentCommand="_currentCommand";
+_returnValue="_returnValue";
+_Game="_Game";
+_Owner="_Owner";
+ _Opponent="_Opponent";
+ _Source="_Source";
+ __stackValues={_Game,_Owner,_Opponent};
+_template="_template";
+ _cardName="_cardName";
+ _cardText="_cardText";
+_dr="<=";
+
+TODO:
+Dereference strings?
+

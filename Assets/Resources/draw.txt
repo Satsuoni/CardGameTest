@@ -1,51 +1,150 @@
 condition countHand
 {
-count _Game.HAND
+count HAND
       condition { true }
       condition { less _count 7 }
 }
 
-conditional txt
+condition countDeck
 {
-string text "Called hook"
+and { condition {
+
+count DECK
+ condition { true }
+condition { le _count 0 } }
+
+condition {
+count DISCARD
+condition { true }
+condition { greater _count 0 } }
+}
+
+}
+
+condition PlayerHands
+{
+any _Game._Players countHand
+}
+
+condition PlayerDecks
+{
+any _Game._Players countDeck
+}
+
+conditional Card
+{
+tag CARD
+string _cardName "not_set"
+string _cardText "not_set"
+}
+
+conditional Card1 Card
+{
+string _cardName "Name1"
+string _cardText "Test card 1"
+}
+
+conditional Card2 Card
+{
+string _cardName "Name__2"
+string _cardText "Test card 2!"
+}
+
+conditional CardSampleHead Card
+{
+string _cardName "Sample Head"
+string _cardText "This is example head
+transform"
+
+tag SLOT_HEAD
+tag TRANSFORM
+tag ARTIFICIAL
+tag ATTACK_BEAM
+
+float _Durability 100
+float _SummonCost 10
+float _DismissCost 20
+float _MaintenanceCost 3
+
+list _effects {
+ conditional {
+      }
+  }
+
+}
+
+conditional Player
+{
+list HAND
+{ }
+list DECK
+{
+Card1
+Card2
+Card1
+Card2
+Card1
+Card1
+Card2
+
+}
+list DISCARD
+{ Card1 Card2 }
+}
+conditional Player1 Player
+{ }
+
+conditional Player2 Player
+{ }
+
+list _Players
+{
+Player1
+Player2
 }
 
 conditional drawRule
 {
 tag MAIN_RULE
 tag INVIOLATE
-condition _condition countHand
+condition _condition PlayerHands
 function _commands 
   {
-  any _Game.DECK _tmp
-  remove _Game.DECK _tmp
+  accumulate countHand _Game._Players _tmpl
+  foreach _tmpl
+   {
+  any _target.DECK _tmp
+  remove _target.DECK _tmp
   hook draw _tmp
-  push _Game.HAND _tmp  
+  push _target.HAND _tmp
+   }
+  clear _tmpl
   }
 }
 
-conditional testRule
+conditional shuffleRule
 {
-tag EXECUTE_PREFIX
-condition _condition {
-      and { condition { command_type _currentCommand push }
-           condition { strcomp _currentCommand.arg0 _Game.HAND } }
-          }
-function _commands 
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition PlayerDecks
+function _commands
+{
+ accumulate countDeck _Game._Players _tmpl
+ foreach _tmpl
  {
- hook log _Game.txt
+  set DECK <=_target.DISCARD
+  clear _target.DISCARD
+  newlist _target.DISCARD
+  hook shuffle _target
  }
+ clear _tmpl
+}
 }
 
-function testFunc
-{
-set Damage 10
-add Damage <=Damage
 
-}
 
 list _effects
 {
 drawRule
-testRule
+ shuffleRule
 }

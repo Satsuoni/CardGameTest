@@ -36,7 +36,8 @@ public class GameUIManager : MonoBehaviour {
 		crt.offsetMin=Vector2.zero;
 		SpawnCardAnim can=crd.GetComponent<SpawnCardAnim>();
 		can.middle=flipper;
-		IList lst=_game._GameData["HAND"] as IList;
+		IList plst=_game._GameData["_Players"] as IList;
+		IList lst=(plst[0] as SingleGame.Conditional)["HAND"] as IList;
 		int cnt=lst.Count;
 		if (cnt>=7) cnt=6;
 		can.hand=handSlots[cnt];
@@ -51,16 +52,23 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="draw")
 		{
 			StartCoroutine(draw ());
+			return;
 		}
 		if(name=="log")
 		{
       Debug.Log("hooklog");
 			Debug.Log(data["text"]);
+      hooks.Remove("log");
 			SingleGame.GameManager.endHook();
+			return;
 		}
+		Debug.Log(string.Format("Undefined Hook called: {0}",name));
+		hooks.Remove(name);
+		SingleGame.GameManager.endHook();
 	}
 	// Update is called once per frame
 	void Update () {
+  
 	if(_game.hookInProgress&&!hooks.Contains(_game.hookName))
 		{
 			ExecuteHookWithNameAndData(_game.hookName,_game.hookData);
