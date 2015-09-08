@@ -51,6 +51,7 @@ public class SingleGame
 	public const string _cardName="_cardName";
 	public const string _cardText="_cardText";
 	public const string _dr="<=";
+  public const string _upcond="<<";
 	public const int _drl=2;
   public const string _parentl="<--|";
 //helper dictionaries
@@ -693,7 +694,19 @@ public class SingleGame
             case "true":{
               ret=new Condition(Condition.Type.TRUE,"");
             }break;
-            case "strcomp":{
+            case "self":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read condition var name at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              ret=new Condition(Condition.Type.SELF,varname);
+            };break;
+              case "strcomp":{
               string varname=readString(_txt,ref pos,out result);
               if(!result)
               {
@@ -1295,6 +1308,17 @@ public class SingleGame
       switch (cmd)
       {
       case Operation.Commands.TAG_SET:{
+				string val=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+        args.Add(val);
         string tag=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1305,6 +1329,7 @@ public class SingleGame
           res=false;
           return null;
         }
+     
         args.Add(tag);
         ret=new Operation(Operation.Commands.TAG_SET);
         ret[_args]=args;
@@ -1312,6 +1337,17 @@ public class SingleGame
         return ret;
       }
       case Operation.Commands.TAG_SWITCH:{
+        string val=readString(_txt,ref pos,out result);
+        
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read tag name at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(val);
         string tag_from=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1339,6 +1375,7 @@ public class SingleGame
         return ret;
       }
       case Operation.Commands.VALUE_SET:{
+
         string settarg=readString(_txt,ref pos,out result);
         
         if(!result)
@@ -1608,6 +1645,77 @@ public class SingleGame
         args.Add(listval);
         args.Add(lst);
         ret=new Operation(Operation.Commands.FOREACH);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+      case Operation.Commands.WHILE:
+      {
+        string condname=readString(_txt,ref pos,out result);
+        Condition a1=null;
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(condname=="condition")
+        {
+          a1=readCondition(_txt,ref pos,out result);
+          if(!result){
+            #if THING
+            Debug.LogWarning(string.Format("Couldn't read accumulate cond  at pos: {0} ",pos));
+            #endif
+            res=false;
+            return null;}
+          
+        }
+        else
+        {
+          a1=getFromContext(condname) as Condition;
+          if(a1==null)
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+            #endif
+            res=false;
+            return null;
+          }
+          
+        }
+        args.Add(a1);
+        string ob=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(ob!="{")
+        {
+          #if THING
+          Debug.LogWarning(string.Format("No opening bracket, this: {0} ",ob));
+          #endif
+          res=false;
+          return null;
+        }
+        List<Operation> lst=readOperationList(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach operations at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+
+        args.Add(lst);
+        ret=new Operation(Operation.Commands.WHILE);
         ret[_args]=args;
         res=true;
         return ret;
@@ -2208,7 +2316,7 @@ public class SingleGame
 					{
 						Condition cnd=eff[_condition] as Condition;
 						//Debug.Log(cnd);
-						if(cnd.isFulfilled(stack))
+						if(cnd.isFulfilled(stack,stack[_Game] as Conditional))
 						{
 							Debug.Log(cnd);
 							Operation op=new Operation(Operation.Commands.NEW);
@@ -2412,6 +2520,7 @@ public class SingleGame
 			REMOVE,
 			ANY, //get any in list without deleting
 			NEWLIST,
+      WHILE,
 			ERROR
 		}
 		Commands _command;
@@ -2444,6 +2553,7 @@ public class SingleGame
       case "append":return Commands.APPEND;
       case "remove":return Commands.REMOVE;
       case "any":return Commands.ANY;
+      case "while":return Commands.WHILE;
       }
      
       return Commands.ERROR;
@@ -2513,48 +2623,50 @@ public class SingleGame
 			{
 			case Commands.TAG_SET:
 				{
-					target.setTag(this["arg0"] as string);}
+					(stack[this["arg0"] as string] as Conditional).setTag(this["arg1"] as string);}
 				break;
 			case Commands.TAG_SWITCH:
 				{
-        if(target.hasTag(this["arg0"] as string))
+        Conditional ct=(stack[this["arg0"]as string] as Conditional);
+        if(ct.hasTag(this["arg1"] as string))
 					{
-          target.removeTag(this["arg0"] as string);
-          target.setTag(this["arg1"] as string);
+          ct.removeTag(this["arg1"] as string);
+          ct.setTag(this["arg2"] as string);
 					}
 				}
 				break;
 			case Commands.VALUE_SET:
 				{
+       // Conditional ct=(stack[this["arg0"] as string] as Conditional);
         if(this["arg1"]is string&&(this["arg1"] as string).StartsWith(_dr))
 					{
-				     target[this["arg0"] as string]=stack[(this["arg1"] as string).Substring(_drl)];
+				     stack[this["arg0"] as string]=stack[(this["arg1"] as string).Substring(_drl)];
 					} else
-          target[this["arg0"] as string]=this["arg1"];}
+          stack[this["arg0"] as string]=this["arg1"];}
 				break;
 			case Commands.ADD:
 				{
         object a1=target[this["arg0"] as string];
         object a2=deRef(this["arg1"], stack);
-        target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2), a1.GetType());}
+        stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.SUBTRACT:
 				{
         object a1=target[this["arg0"] as string];
         object a2=deRef(this["arg1"], stack);
-        target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2), a1.GetType());}
+        stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.MULTIPLY:
 				{
 					object a1=target[this["arg0"] as string];
 					object a2=deRef(this["arg1"], stack);
-					target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2), a1.GetType());}
+					stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.DIVIDE:
 				{
 					object a1=target[this["arg0"] as string];
 					object a2=deRef(this["arg1"], stack);
-					target[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2), a1.GetType());}
+					stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.ABORT:
 				{
@@ -2620,8 +2732,27 @@ public class SingleGame
 						}
 					}
         stack[_target]=oldtarget;
-				}
+      }
 				break;
+      case Commands.WHILE:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack this["arg1"]->list of commands
+      {
+       // object oldtarget=stack[_target];
+        Condition lname=this["arg0"] as Condition;
+        if(lname!=null)
+        {
+
+            while(lname.isFulfilled(stack,stack[_Game] as Conditional))
+            {
+                executeList(this["arg1"], stack);
+                if(stack.hasTag(TAG_ABORT))
+                  return;
+                stack.removeTag(TAG_CONTINUE);
+              }
+            }
+
+        //stack[_target]=oldtarget;
+      }
+        break;
 			case Commands.TARGET://will assign _targetList? value in stack arg0 - condition, arg1 - list, equivalent of accumulate for specific list
 				{
 					List<Conditional> targs=new List<Conditional>();
@@ -2644,7 +2775,7 @@ public class SingleGame
 					foreach(object potCn in vars)
 					{
 						Conditional check=potCn as Conditional;
-						if(baseCond.isFulfilled(check))
+						if(baseCond.isFulfilled(check,stack))
 							targs.Add(check);
 					}
 					stack[_targetList]=targs;
@@ -2680,7 +2811,7 @@ public class SingleGame
 					foreach(object potCn in vars)
 					{
 						Conditional check=potCn as Conditional;
-						if(baseCond.isFulfilled(check))
+						if(baseCond.isFulfilled(check,stack))
 							targs.Add(check);
 					}
 					stack[listname]=targs;
@@ -2888,7 +3019,7 @@ public class SingleGame
 								Debug.Log(string.Format("Invalid effect condition {0}", effect[_condition]));
 							} else
 							{
-								if(cn.isFulfilled(stack)) //execute effect
+								if(cn.isFulfilled(stack,stack[_Game] as Conditional)) //execute effect
 								{
 
 									preffect.setTag(TAG_ACTIVATED);
@@ -2954,6 +3085,7 @@ public class SingleGame
 		public enum Type
 		{
 			TAG,
+  
 			STRING,
 			COMPOUND_ANY,//for Lists
 			COMPOUND_ALL,
@@ -2971,7 +3103,8 @@ public class SingleGame
       ///for commands/operations
       COMMAND_TYPE,
       COMMAND_ARG,
-			ISSET
+			ISSET,
+      SELF
 		}
 		public bool inverse;
 		public Type type;
@@ -2995,9 +3128,12 @@ public class SingleGame
 			}
 
 		}
-		public bool isFulfilled(Conditional cnd)
+		public bool isFulfilled(Conditional cnd,Conditional upstage)
 		{
+      object oldcond=cnd[_upcond];
+      cnd[_upcond]=upstage;
 			bool res=__isFulfilled(cnd);
+      cnd[_upcond]=oldcond;
 			if(inverse)
 				return !res;
 			return res;
@@ -3014,6 +3150,14 @@ public class SingleGame
 				if(var!=null) return true;
 				return false;
 			}
+      if(type==Type.SELF)
+      {
+        Condition var=cnd[variable] as Condition;
+				if(var!=null)
+        return var.isFulfilled(cnd,cnd[_upcond] as Conditional);
+				else
+					return false;
+      }
       if(type==Type.COMMAND_TYPE)
       {
         if(values.Length<1)
@@ -3048,7 +3192,7 @@ public class SingleGame
         if(lsta.Count<=nm) return false;
         Conditional secval=new Conditional();
         secval["_arg"]=lsta[nm];
-        return scond.isFulfilled(secval);
+        return scond.isFulfilled(secval,cnd);
       }
 			/*if(variables.Length==0) return false;
 			if(variables.Length>1)
@@ -3066,18 +3210,27 @@ public class SingleGame
 			else
 				variable=variables[0];*/
 
-			if(type==Type.TAG)
-				return cnd.hasTag(variable);
+			if(type==Type.TAG) //also dereferenced
+      {
+       
+        if(variable.StartsWith(_dr))
+          variable=cnd[variable.Substring(_drl)] as string;
+        return cnd.hasTag(variable);
+      }
+    
 
 			if(type==Type.STRING)
 			{
 				if(values.Length<1)
 					return false;
 				string val2=cnd[variable] as string;
+        string cmpr=(values[0] as string);
+        if(cmpr.StartsWith(_dr))
+          cmpr=cnd[cmpr.Substring(_drl)] as string;
         //Debug.Log(val2);
 				if(val2==null)
 					return false;
-				return (val2==(values[0] as string));
+				return (val2==cmpr);
 			}
 			if(type==Type.COMPOUND_ALL||type==Type.COMPOUND_ANY||type==Type.COMPOUND_COUNT) //compounds! EW
 			{
@@ -3100,13 +3253,15 @@ public class SingleGame
        
 				if(!(cval is IList))
 					return false;
-				List<Conditional> ccnds=cval as List<Conditional>;
+				IList ccnds=cval as IList;
 				if(ccnds==null)
 					return false;
 				int cnt=0;
-				foreach(Conditional cn in ccnds)
+				foreach(object ocn in ccnds)
 				{
-					bool res=compcond.isFulfilled(cn);
+          Conditional cn=ocn as Conditional;
+          if(cn==null) return false;
+					bool res=compcond.isFulfilled(cn,cnd);
 					if(type==Type.COMPOUND_ALL&&!res)
 						return false;
 					if(type==Type.COMPOUND_ANY&&res)
@@ -3127,7 +3282,7 @@ public class SingleGame
 					Conditional temp=new Conditional();
 					temp[_count]=cnt;
 					temp[_parent]=cnd;
-					return cnd2.isFulfilled(temp);
+					return cnd2.isFulfilled(temp,cnd);
 				}
 
 			}
@@ -3144,7 +3299,7 @@ public class SingleGame
 						#endif
 						return false;
 					}
-					if(!tcnd.isFulfilled(cnd))
+					if(!tcnd.isFulfilled(cnd,cnd[_upcond] as Conditional))
 					{
 						ok=false;
 						break;
@@ -3165,7 +3320,7 @@ public class SingleGame
 						#endif
 						return false;
 					}
-					if(tcnd.isFulfilled(cnd))
+					if(tcnd.isFulfilled(cnd,cnd[_upcond] as Conditional))
 					{
 						ok=true;
 						break;

@@ -46,6 +46,16 @@ public class GameUIManager : MonoBehaviour {
 		hooks.Remove("draw");
 		yield break;
 	}
+  void ExecuteChoice(string name,IList lst )
+  {
+    if(name=="getMainPlayer")
+    {
+      SingleGame.GameManager.endChoice(lst[0] as SingleGame.Conditional);
+      return;
+    }
+    SingleGame.GameManager.endChoice(null);
+  }
+ 
 	void ExecuteHookWithNameAndData(string name,SingleGame.Conditional data )
 	{
 		hooks.Add(name);
@@ -62,7 +72,16 @@ public class GameUIManager : MonoBehaviour {
 			SingleGame.GameManager.endHook();
 			return;
 		}
-		Debug.Log(string.Format("Undefined Hook called: {0}",name));
+    if(name=="id")
+    {
+      Debug.Log("idlog");
+      data["playerID"]=SingleGame.getRandString(12);
+      Debug.Log(data["playerID"]);
+      hooks.Remove(name);
+      SingleGame.GameManager.endHook();
+      return;
+    }
+    Debug.Log(string.Format("Undefined Hook called: {0}",name));
 		hooks.Remove(name);
 		SingleGame.GameManager.endHook();
 	}
@@ -73,5 +92,10 @@ public class GameUIManager : MonoBehaviour {
 		{
 			ExecuteHookWithNameAndData(_game.hookName,_game.hookData);
 		}
+    if(_game.choiceInProgress)
+    {
+      ExecuteChoice(_game.choiceName,_game.choiceList);
+    }
+
 	}
 }

@@ -49,12 +49,14 @@ true
 command_type <string var_name> <string command>
 command_arg <string var_name> <int argnum> <condition compare>
 isset <string var_name>
+self <string condition_name>
+I need a "self" condition?
 
 Operations/commands (target is implicit, stack[_target]):
 
-tag_set <string tag>
-tag_switch <string tag_from> <string tag_to>
-set <string var_name> <string object> //sets value on TARGET, not stack
+tag_set <string val> <string tag>
+tag_switch <string val> <string tag_from> <string tag_to>
+set <string var_name> <string object> //rewriting to set on stack
 add <string var_name> <float val>
 sub <string var_name> <float val>
 mul <string var_name> <float val>
@@ -76,7 +78,8 @@ shift <string list_name> <string ret_value>
 append <string list_name> <string value>
 remove <string list_name> <string stack_name>
 any <string list_name> <string ret_value>
-
+while <condition cond> {<list of commands>}
+add while?
 
 Special tags and values: 
 EXECUTE_PREFIX

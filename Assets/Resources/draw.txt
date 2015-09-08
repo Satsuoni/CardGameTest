@@ -4,6 +4,15 @@ count HAND
       condition { true }
       condition { less _count 7 }
 }
+condition hasID
+{
+isset playerID
+}
+condition hasNoID
+{
+inverse
+isset playerID
+}
 
 condition countDeck
 {
@@ -24,6 +33,11 @@ condition { greater _count 0 } }
 condition PlayerHands
 {
 any _Game._Players countHand
+}
+
+condition PlayerIDs
+{
+any _Game._Players hasNoID
 }
 
 condition PlayerDecks
@@ -90,7 +104,14 @@ Card2
 }
 list DISCARD
 { Card1 Card2 }
+
+
 }
+
+list CARDS
+{ }
+
+
 conditional Player1 Player
 { }
 
@@ -103,6 +124,8 @@ Player1
 Player2
 }
 
+
+
 conditional drawRule
 {
 tag MAIN_RULE
@@ -110,6 +133,8 @@ tag INVIOLATE
 condition _condition PlayerHands
 function _commands 
   {
+ while PlayerHands
+{
   accumulate countHand _Game._Players _tmpl
   foreach _tmpl
    {
@@ -117,10 +142,39 @@ function _commands
   remove _target.DECK _tmp
   hook draw _tmp
   push _target.HAND _tmp
+
    }
-  clear _tmpl
+clear _tmpl }
   }
 }
+
+conditional idRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition PlayerIDs
+function _commands
+{
+ accumulate hasNoID _Game._Players _tmpl
+ foreach _tmpl
+ {
+ hook id _target
+ }
+ clear _tmpl
+ }
+}
+
+conditional getMainPlayer
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition { inverse isset _Game.mainPlayer }
+function _commands
+{
+choice getMainPlayer _Game._Players _Game.mainPlayer
+}
+}
+
 
 conditional shuffleRule
 {
@@ -141,10 +195,98 @@ function _commands
 }
 }
 
+condition playerReady
+{
+and
+ {
+ countHand
+ hasID
+ }
+}
+
+condition playersReady
+{
+all _Game._Players playerReady
+}
+
+
+condition mainPlayerCanPlay
+{
+
+and {
+    playersReady
+    condition  {  isset _Game.mainPlayer }
+
+    }
+
+}
+condition activeAbility
+{
+and { condition { tag ABILITY }
+      condition { tag HAND }
+      condition { any _Owner.BODY condition{ and { condition {tag <=<<.sourceType } condition { tag FREE } } } }
+      condition { self _hasTargets }
+    }
+}
+
+condition handTransform
+{
+and {
+condition { tag HAND }
+condition { all _Owner.BODY condition{ and { condition {tag <=<<.sourceType } condition { tag FREE } } } }
+
+}
+}
+
+condition bodyTransform
+{
+and {
+condition { tag BODY }
+condition { tag FREE }
+condition { self _executeCondition }
+
+}
+}
+
+condition activeTransform
+{
+and { condition { tag TRANSFORM }
+condition { or{
+  handTransform
+bodyTransform } }
+    }
+}
+
+condition mpActiveCard
+{
+and {
+   condition { tag MAIN_PLAYER }
+condition { or { activeAbility activeTransform } }
+    }
+}
+
+conditional choiceRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition mainPlayerCanPlay
+function _commands
+  {
+  target mpActiveCard _Game.CARDS
+  clear _mpCards
+  foreach _targetList
+  {
+
+  }
+  choice chooseCard _playableCards _Game.mainPlayer.chosenCard
+  }
+}
 
 
 list _effects
 {
+idRule
+getMainPlayer
 drawRule
- shuffleRule
+shuffleRule
 }
