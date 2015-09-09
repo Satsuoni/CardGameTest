@@ -87,6 +87,8 @@ public static class rtExt
 }
 public class CardControl : MonoBehaviour {
 
+	public UnityEngine.UI.RawImage cardImg;
+	public UnityEngine.UI.RawImage glow;
 	public UnityEngine.UI.Text text;
 //	CardFlip flip;
 	// Use this for initialization
@@ -95,7 +97,13 @@ public class CardControl : MonoBehaviour {
 	void Start () {
 		//flip=gameObject.GetComponent<CardFlip>();
 		text.text=cardData[SingleGame._cardText] as string;
-
+		string imgname=cardData["_cardImage"] as string;
+		if(imgname !=null)
+		{
+			Texture2D txt=Resources.Load(imgname) as Texture2D;
+			if(txt!=null)
+				cardImg.texture=txt;
+		}
 	}
 	
 	// Update is called once per frame

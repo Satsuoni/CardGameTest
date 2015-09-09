@@ -54,6 +54,7 @@ public class SingleGame
   public const string _upcond="<<";
 	public const int _drl=2;
   public const string _parentl="<--|";
+	public const string _rootl="|-";
 //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
@@ -486,6 +487,10 @@ public class SingleGame
         if(ret==null)
           ret=new Conditional();
         ret[_parentl]=this;
+				if(this[_rootl]==null)
+					ret[_rootl]=this;
+				else
+					ret[_rootl]=this[_rootl];
         if(!ret.readInternalList(_txt,ref pos))
         {
           #if THING
@@ -1336,6 +1341,35 @@ public class SingleGame
         res=true;
         return ret;
       }
+			case Operation.Commands.TAG_REMOVE:{
+				string val=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(val);
+				string tag=readString(_txt,ref pos,out result);
+				
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read tag name at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				
+				args.Add(tag);
+				ret=new Operation(Operation.Commands.TAG_REMOVE);
+				ret[_args]=args;
+        res=true;
+        return ret;
+      }
       case Operation.Commands.TAG_SWITCH:{
         string val=readString(_txt,ref pos,out result);
         
@@ -1649,6 +1683,112 @@ public class SingleGame
         res=true;
         return ret;
       }
+			case Operation.Commands.CONDITION_AND:
+			{
+				string varname=readString(_txt,ref pos,out result);
+				if(!result)
+        {
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read condand   at pos: {0} ",pos));
+					#endif
+					res=false;
+          return null;
+        }
+				args.Add(varname);
+				string condname=readString(_txt,ref pos,out result);
+				Condition a1=null;
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read condand condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				if(condname=="condition")
+				{
+					a1=readCondition(_txt,ref pos,out result);
+					if(!result){
+						#if THING
+						Debug.LogWarning(string.Format("Couldn't read condand cond  at pos: {0} ",pos));
+						#endif
+						res=false;
+						return null;}
+					
+				}
+				else
+				{
+					a1=getFromContext(condname) as Condition;
+					if(a1==null)
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+						#endif
+						res=false;
+						return null;
+					}
+					
+				}
+				args.Add(a1);
+
+				ret=new Operation(Operation.Commands.CONDITION_AND);
+				ret[_args]=args;
+				res=true;
+				return ret;
+      }
+			case Operation.Commands.CONDITION_OR:
+			{
+				string varname=readString(_txt,ref pos,out result);
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read condand   at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				args.Add(varname);
+				string condname=readString(_txt,ref pos,out result);
+				Condition a1=null;
+				if(!result)
+				{
+					#if THING
+					Debug.LogWarning(string.Format("Couldn't read condand condition  at pos: {0} ",pos));
+					#endif
+					res=false;
+					return null;
+				}
+				if(condname=="condition")
+				{
+					a1=readCondition(_txt,ref pos,out result);
+					if(!result){
+						#if THING
+						Debug.LogWarning(string.Format("Couldn't read condand cond  at pos: {0} ",pos));
+						#endif
+						res=false;
+						return null;}
+					
+				}
+				else
+				{
+					a1=getFromContext(condname) as Condition;
+					if(a1==null)
+					{
+						#if THING
+						Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+						#endif
+						res=false;
+            return null;
+          }
+          
+        }
+        args.Add(a1);
+        
+        ret=new Operation(Operation.Commands.CONDITION_OR);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
       case Operation.Commands.WHILE:
       {
         string condname=readString(_txt,ref pos,out result);
@@ -1656,7 +1796,7 @@ public class SingleGame
         if(!result)
         {
           #if THING
-          Debug.LogWarning(string.Format("Couldn't read accumulate condition  at pos: {0} ",pos));
+          Debug.LogWarning(string.Format("Couldn't read while condition  at pos: {0} ",pos));
           #endif
           res=false;
           return null;
@@ -2496,6 +2636,7 @@ public class SingleGame
 		public enum Commands
 		{
 			TAG_SET,
+			TAG_REMOVE,
 			TAG_SWITCH,
 			VALUE_SET,
 			ADD,
@@ -2521,6 +2662,9 @@ public class SingleGame
 			ANY, //get any in list without deleting
 			NEWLIST,
       WHILE,
+			/// Condition manipulation
+			CONDITION_AND,
+			CONDITION_OR,
 			ERROR
 		}
 		Commands _command;
@@ -2530,6 +2674,7 @@ public class SingleGame
       switch(str)
       {
       case "tag_set":return Commands.TAG_SET;
+	  case "tag_remove":return Commands.TAG_REMOVE;
       case "tag_switch":return Commands.TAG_SWITCH;
       case "set":return Commands.VALUE_SET;
       case "add":return Commands.ADD;
@@ -2554,6 +2699,8 @@ public class SingleGame
       case "remove":return Commands.REMOVE;
       case "any":return Commands.ANY;
       case "while":return Commands.WHILE;
+			case "condition_and":return Commands.CONDITION_AND;
+			case "condition_or":return Commands.CONDITION_OR;
       }
      
       return Commands.ERROR;
@@ -2621,11 +2768,57 @@ public class SingleGame
 			//IList args=this[_args] as IList;
 			switch(_command)
 			{
-			case Commands.TAG_SET:
+			case Commands.CONDITION_AND:
+			{
+				string nm1=this["arg0"] as string;
+				Condition cnds=stack[nm1] as Condition;
+				if(cnds==null)
+				{
+#if THING
+					Debug.Log("Cond_and : not condition");
+#endif
+				}
+				else
+				{
+					Condition toAdd=deRef(this["arg1"], stack) as Condition;
+					if(toAdd!=null)
+					{
+						Condition wrp=new Condition(Condition.Type.MULTI_AND,"_wrap",cnds,toAdd);
+						stack[nm1]=wrp;
+					}
+				}
+				deRef(this["arg1"], stack);
+			}break;
+			case Commands.CONDITION_OR:
+			{
+				string nm1=this["arg0"] as string;
+				Condition cnds=stack[nm1] as Condition;
+				if(cnds==null)
+				{
+					#if THING
+					Debug.Log("Cond_or : not condition");
+					#endif
+				}
+				else
+				{
+					Condition toAdd=deRef(this["arg1"], stack) as Condition;
+					if(toAdd!=null)
+					{
+						Condition wrp=new Condition(Condition.Type.MULTI_OR,"_wrap",cnds,toAdd);
+            stack[nm1]=wrp;
+          }
+        }
+        deRef(this["arg1"], stack);
+      }break;
+      case Commands.TAG_SET:
 				{
 					(stack[this["arg0"] as string] as Conditional).setTag(this["arg1"] as string);}
 				break;
-			case Commands.TAG_SWITCH:
+			case Commands.TAG_REMOVE:
+			{
+				(stack[this["arg0"] as string] as Conditional).removeTag(this["arg1"] as string);}
+				break;
+      case Commands.TAG_SWITCH:
 				{
         Conditional ct=(stack[this["arg0"]as string] as Conditional);
         if(ct.hasTag(this["arg1"] as string))

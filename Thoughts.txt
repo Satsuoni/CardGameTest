@@ -55,6 +55,7 @@ I need a "self" condition?
 Operations/commands (target is implicit, stack[_target]):
 
 tag_set <string val> <string tag>
+tag_remove <string val> <string tag>
 tag_switch <string val> <string tag_from> <string tag_to>
 set <string var_name> <string object> //rewriting to set on stack
 add <string var_name> <float val>
@@ -79,7 +80,8 @@ append <string list_name> <string value>
 remove <string list_name> <string stack_name>
 any <string list_name> <string ret_value>
 while <condition cond> {<list of commands>}
-add while?
+condition_and <string val_name> <condition toadd>
+condition_or <string val_name> <condition toadd>
 
 Special tags and values: 
 EXECUTE_PREFIX
@@ -109,4 +111,6 @@ _dr="<=";
 
 TODO:
 Dereference strings?
+
+Root : |-
 
