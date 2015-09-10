@@ -2587,8 +2587,23 @@ public class SingleGame
 		}
 		public void fillGameData()
 		{
-			TextAsset ass=Resources.Load("draw") as TextAsset;
-			_GameData=Conditional.loadFromString(ass.text); //a test, for now..
+
+			TextAsset flist=Resources.Load("flist") as TextAsset;
+			Conditional read=new Conditional();
+			bool result=true;
+			int pos=0;
+			string file=read.readString(flist.text,ref pos, out result);
+			StringBuilder sb=new StringBuilder();
+			while(result)
+			{
+				TextAsset ass=Resources.Load(file) as TextAsset;
+				if(ass!=null)
+				{
+					sb.Append(ass.text);
+				}
+				file=read.readString(flist.text,ref pos, out result);
+			}
+			_GameData=Conditional.loadFromString(sb.ToString()); //a test, for now..
       /*IList testop=_GameData["testFunc"] as IList;
       Conditional tstack=new Conditional();
       tstack[_target]=tstack;

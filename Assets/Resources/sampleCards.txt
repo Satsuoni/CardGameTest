@@ -1,0 +1,30 @@
+conditional CardSampleHead Transform
+{
+string _cardName "Sample Head"
+string _cardText "This is example head
+transform"
+string _cardImage "bd"
+
+tag SLOT_HEAD
+tag ARTIFICIAL
+tag ATTACK_BEAM
+tag ATTACK_EDGE
+float _castCost 10
+float _maintenanceCost 5
+float _dismissCost 40
+float _durability 100
+
+list _addedRules { }
+
+list abilities {
+ conditional ab1 Ability
+{ condition _targetCond { and { condition { tag CARD } condition { tag BODY } distance_melee  } }
+float _cost 4
+function _effects { sub _target.Energy 25 }
+}
+  }
+
+
+
+}
+

@@ -1,0 +1,5 @@
+mainConditions 
+defaultConditionals
+draw 
+sampleCards
+gameLayout

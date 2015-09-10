@@ -1,79 +1,7 @@
-condition countHand
-{
-count HAND
-      condition { true }
-      condition { less _count 7 }
-}
-condition hasID
-{
-isset playerID
-}
-condition hasNoID
-{
-inverse
-isset playerID
-}
 
-condition countDeck
-{
-and { condition {
 
-count DECK
- condition { true }
-condition { le _count 0 } }
 
-condition {
-count DISCARD
-condition { true }
-condition { greater _count 0 } }
-}
 
-}
-
-condition PlayerHands
-{
-any _Game._Players countHand
-}
-
-condition PlayerIDs
-{
-any _Game._Players hasNoID
-}
-
-condition PlayerDecks
-{
-any _Game._Players countDeck
-}
-
-conditional Card
-{
-tag CARD
-string _cardName "not_set"
-string _cardText "not_set"
-string _cardImage "_"
-}
-
-conditional Ability Card
-{
-tag ABILITY
-float _cost 0
-string sourceType ATTACK_EDGE
-float delay 0.2
-function _effects { }
-condition _targetCond { and { condition { tag CARD } condition { tag BODY }  } }
-condition _castCond { less _cost _Owner.Energy }
-}
-
-conditional Transform Card
-{
-tag TRANSFORM
-float _castCost 0
-float _maintenanceCost 0
-float _dismissCost 0
-float _durability 10
-list _addedRules { }
-list abilities { }
-}
 
 conditional Card1 Card
 {
@@ -89,55 +17,12 @@ string _cardText "Test card 2!"
 string _cardImage "bakabel"
 }
 
-conditional CardSampleHead Transform
-{
-string _cardName "Sample Head"
-string _cardText "This is example head
-transform"
-string _cardImage "bd"
-
-tag SLOT_HEAD
-tag ARTIFICIAL
-tag ATTACK_BEAM
-tag ATTACK_EDGE
-float _castCost 10
-float _maintenanceCost 5
-float _dismissCost 40
-float _durability 100
-
-list _addedRules { }
-list abilities {
- conditional ab1 Ability
-{ condition _targetCond { and { condition { tag CARD } condition { tag BODY }  condition { strcomp |-._distance MELEE }  } }
-float _cost 4
-function _effects { sub _target.Energy 25 }
-}
-  }
 
 
 
-}
-
-conditional Player
-{
-list HAND
-{ }
-list DECK
-{
-Card1
-Card2
-Card1
-Card2
-Card1
-Card1
-Card2
-
-}
-list DISCARD
-{ Card1 Card2 }
 
 
-}
+
 
 list CARDS
 { }
@@ -358,14 +243,7 @@ function _commands
 }
 
 
-list _effects
-{
-idRule
-getMainPlayer
-drawRule
-shuffleRule
-dismissRule
-}
+
 list _Entities
 {
 

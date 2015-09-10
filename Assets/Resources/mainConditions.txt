@@ -1,0 +1,61 @@
+condition countHand
+{
+count HAND
+      condition { true }
+      condition { less _count 7 }
+}
+condition hasID
+{
+isset playerID
+}
+condition hasNoID
+{
+inverse
+isset playerID
+}
+
+condition countDeck
+{
+and { condition {
+
+count DECK
+ condition { true }
+condition { le _count 0 } }
+
+condition {
+count DISCARD
+condition { true }
+condition { greater _count 0 } }
+}
+
+}
+
+condition PlayerHands
+{
+any _Game._Players countHand
+}
+
+condition PlayerIDs
+{
+any _Game._Players hasNoID
+}
+
+condition PlayerDecks
+{
+any _Game._Players countDeck
+}
+
+condition distance_melee
+{
+strcomp |-._distance MELEE
+}
+
+condition distance_midrange
+{
+strcomp |-._distance MIDRANGE
+}
+
+condition distance_far
+{
+strcomp |-._distance FAR
+}

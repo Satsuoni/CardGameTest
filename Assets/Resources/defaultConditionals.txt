@@ -1,0 +1,63 @@
+conditional Card
+{
+tag CARD
+string _cardName "not_set"
+string _cardText "not_set"
+string _cardImage "_"
+}
+
+conditional Ability Card
+{
+tag ABILITY
+float _cost 0
+string sourceType ATTACK_EDGE
+float delay 0.2
+function _effects { }
+condition _targetCond { and { condition { tag CARD } condition { tag BODY }  } }
+condition _castCond { less _cost _Owner.Energy }
+}
+
+conditional Transform Card
+{
+tag TRANSFORM
+float _castCost 0
+float _maintenanceCost 0
+float _dismissCost 0
+float _durability 10
+list _addedRules { }
+list abilities { }
+}
+
+conditional defaultHead
+{
+tag ATTACK_BLUNT
+
+}
+
+conditional Player
+{
+string _name unset
+
+float Energy 1000
+
+list HAND
+{ }
+
+list DECK
+{ }
+list DISCARD
+{  }
+
+list DEFAULT_BODY
+{
+
+}
+
+
+list BODY
+{
+
+}
+
+}
+
