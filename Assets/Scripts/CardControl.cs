@@ -108,6 +108,6 @@ public class CardControl : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-	
+		glow.gameObject.SetActive(cardData.hasTag("ACTIVE"));
 	}
 }

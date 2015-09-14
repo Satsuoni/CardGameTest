@@ -1,0 +1,44 @@
+
+conditional Player1 Player
+{
+string _name MainPlayer
+
+
+list DECK
+{
+conditional _ CardSampleHead
+conditional _ CardSampleLHand
+conditional _  SampleAbility 
+conditional _ CardSampleHead
+conditional _ CardSampleLHand
+conditional _  SampleAbility 
+conditional _ CardSampleHead
+conditional _ CardSampleLHand
+conditional _  SampleAbility 
+ }
+
+}
+
+conditional Player2 Player
+{
+string _name Dummy
+
+
+list DECK
+{
+conditional _ CardSampleHead
+conditional _ CardSampleHead
+conditional _  SampleAbility 
+conditional _ CardSampleHead
+conditional _ CardSampleHead
+conditional _  SampleAbility 
+conditional _ CardSampleHead
+conditional _ CardSampleHead
+conditional _  SampleAbility 
+ }
+
+
+
+
+}
+

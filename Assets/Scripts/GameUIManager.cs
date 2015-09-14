@@ -20,6 +20,13 @@ public class GameUIManager : MonoBehaviour {
 	}
 	IEnumerator draw()
 	{
+		Debug.Log(_game.hookData["_Owner"]);
+		if(_game.hookData["_Owner"]!=_game._GameData["Player1"])
+		{
+			SingleGame.GameManager.endHook();
+			hooks.Remove("draw");
+			yield break;
+		}
 		RectTransform rt=deck.RootCanvasTransform();
 		GameObject crd=Instantiate(card) as GameObject;
 		CardControl crc=crd.GetComponent<CardControl>();

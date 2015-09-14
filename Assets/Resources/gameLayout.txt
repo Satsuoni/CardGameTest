@@ -1,8 +1,18 @@
+list _Players
+{
+Player1
+Player2
+}
+
+
 list _effects
 {
 idRule
+ownRule
 getMainPlayer
 drawRule
 shuffleRule
 dismissRule
+activateRule
 }
+

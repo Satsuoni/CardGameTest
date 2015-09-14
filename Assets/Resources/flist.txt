@@ -2,4 +2,5 @@ mainConditions
 defaultConditionals
 draw 
 sampleCards
+samplePlayers
 gameLayout

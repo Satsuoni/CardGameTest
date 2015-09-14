@@ -1,60 +1,15 @@
 
 
 
-
-
-conditional Card1 Card
-{
-string _cardName "Name1"
-string _cardText "Test card 1"
-string _cardImage "banan"
-}
-
-conditional Card2 Card
-{
-string _cardName "Name__2"
-string _cardText "Test card 2!"
-string _cardImage "bakabel"
-}
-
-
-
-
-
-
-
-
 list CARDS
 { }
 
 
-conditional Player1 Player
-{ }
-
-conditional Player2 Player
-{ }
-
-list _Players
-{
-Player1
-Player2
-}
 
 
-condition forDismissal
-{
-and {
- condition { tag BODY }
- condition { tag TRANSFORM }
-condition { or { condition  { le Energy 0 } condition { tag DISMISS_MARK } } }
-}
 
-}
 
-condition anyToDismiss
-{
-any _Game._Entities forDismissal
-}
+
 
 conditional dismissRule
 {
@@ -101,9 +56,55 @@ any _target.DECK _tmp
 remove _target.DECK _tmp
 hook draw _tmp
 push _target.HAND _tmp
+tag_switch _tmp DECK HAND
 
 }
 clear _tmpl }
+}
+}
+
+conditional activateRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition { true }
+function _commands
+{
+
+foreach _Game._Players
+{
+accumulate condition { and { castableTransform condition { inverse tag ACTIVE } } } _target.HAND _toacc
+foreach _toacc
+ {
+ tag_set _target ACTIVE
+ hook activate _target
+ }
+}
+
+}
+}
+
+
+conditional ownRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition { any _Game._Players PlayerHasUnownedCards }
+function _commands
+{
+accumulate PlayerHasUnownedCards _Game._Players _tmpl
+foreach _tmpl
+{
+set _tmp <=_target
+foreach _target.DECK
+{
+tag_set _target DECK
+set _target._Owner <=_tmp
+hook own _target
+}
+clear _tmp
+}
+clear _tmpl
 }
 }
 

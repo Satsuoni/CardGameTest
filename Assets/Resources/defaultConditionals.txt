@@ -20,6 +20,8 @@ condition _castCond { less _cost _Owner.Energy }
 conditional Transform Card
 {
 tag TRANSFORM
+string slot NIL
+int slots 1
 float _castCost 0
 float _maintenanceCost 0
 float _dismissCost 0
@@ -28,11 +30,45 @@ list _addedRules { }
 list abilities { }
 }
 
-conditional defaultHead
+conditional defaultBodypart
 {
 tag ATTACK_BLUNT
-
+tag FREE
+tag DEFAULT_BODYPART
+float _Energy 0
 }
+
+conditional defaultHead
+{
+string slot SLOT_HEAD
+}
+
+conditional defaultLHand
+{
+string slot SLOT_LHAND
+}
+
+conditional defaultRHand
+{
+string slot SLOT_RHAND
+}
+
+conditional defaultTorso
+{
+string slot SLOT_TORSO
+}
+
+conditional defaultLLeg
+{
+string slot SLOT_LLEG
+}
+
+conditional defaultRLeg
+{
+string slot SLOT_RLEG
+}
+
+
 
 conditional Player
 {
@@ -50,13 +86,23 @@ list DISCARD
 
 list DEFAULT_BODY
 {
-
+conditional _ defaultHead
+conditional _ defaultLHand
+conditional _ defaultRHand
+conditional _ defaultTorso
+conditional _ defaultLLeg
+conditional _ defaultRLeg
 }
 
 
 list BODY
 {
-
+conditional _ defaultHead
+conditional _ defaultLHand
+conditional _ defaultRHand
+conditional _ defaultTorso
+conditional _ defaultLLeg
+conditional _ defaultRLeg
 }
 
 }

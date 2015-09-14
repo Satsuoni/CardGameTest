@@ -59,3 +59,76 @@ condition distance_far
 {
 strcomp |-._distance FAR
 }
+
+condition cardHasOwner
+{
+and {
+condition { isset _Owner }
+condition { tag CARD }
+}
+}
+
+condition PlayerHasUnownedCards
+{
+any DECK condition { inverse or { cardHasOwner } }
+}
+
+
+condition DefaultBodypartAttackedCondition
+{
+and
+{
+ condition { command_type _currentCommand sub }
+ condition { all _target condition {tag DEFAULT_BODYPART} }
+}
+}
+condition notTransform
+{
+inverse
+tag TRANSFORM
+}
+
+condition forDismissal
+{
+and {
+ condition { tag BODY }
+ condition { tag TRANSFORM }
+condition { or { condition  { le Energy 0 } condition { tag DISMISS_MARK } } }
+}
+
+}
+
+condition anyToDismiss
+{
+any _Game._Entities forDismissal
+}
+
+condition hasSlots
+{
+count _Owner.BODY
+      condition { any << condition { tag <=<<.slot } }
+      condition { equal _count <=<<.slots }
+}
+
+condition isHandTransform
+{
+and
+ {
+ condition { tag TRANSFORM } 
+ condition { tag HAND } 
+ }
+}
+
+condition enoughCastCost
+{
+ge _Owner.Energy  <=_castCost
+}
+
+condition castableTransform
+{
+and {
+isHandTransform
+enoughCastCost
+hasSlots
+}
+}

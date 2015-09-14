@@ -15,7 +15,7 @@ float _dismissCost 40
 float _durability 100
 
 list _addedRules { }
-
+condition _executeCondition { true }
 list abilities {
  conditional ab1 Ability
 { condition _targetCond { and { condition { tag CARD } condition { tag BODY } distance_melee  } }
@@ -26,5 +26,50 @@ function _effects { sub _target.Energy 25 }
 
 
 
+}
+
+conditional CardSampleLHand Transform
+{
+string _cardName "Sample Left Hand"
+string _cardText "This is example LHand
+transform"
+string _cardImage "banan"
+
+tag SLOT_LHAND
+tag ARTIFICIAL
+tag ATTACK_BLUNT
+tag ATTACK_EDGE
+float _castCost 5
+float _maintenanceCost 1
+float _dismissCost 5
+float _durability 30
+
+list _addedRules { }
+condition _executeCondition { true }
+list abilities {
+ conditional ab1 Ability
+{ condition _targetCond { and { condition { tag CARD } condition { tag BODY } distance_midrange  } }
+float _cost 2
+function _effects { sub _target.Energy 20 }
+}
+  }
+
+
+
+}
+conditional SampleAbility Ability
+{
+float _cost 20
+string sourceType ATTACK_BLUNT
+float delay 1
+function _effects {
+sub _target.Energy 50
+ }
+condition _targetCond { and { condition { tag CARD } condition { tag BODY } distance_melee } }
+
+
+string _cardName "Sample Blunt Ability"
+string _cardText "This is example ability"
+string _cardImage "bakabel"
 }
 

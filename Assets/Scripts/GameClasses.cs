@@ -133,6 +133,7 @@ public class SingleGame
 					{
 						nw.Add(cn.duplicate());
 					}
+
 					ret._values[key]=nw;
 					continue;
 				}
@@ -300,6 +301,7 @@ public class SingleGame
           }
           else
           {
+					
             this[nm]=pval;
           }
         }break;
@@ -2424,11 +2426,13 @@ public class SingleGame
 		void mainGameThread()
 		{
 			IList rulesAndEffects=_GameData[_effects] as IList;
+
 			Conditional stack=new Conditional();
 			stack[_Game]=_GameData;
 			List<Conditional> wrappedEffects=new List<Conditional>();
 			foreach(object obj in rulesAndEffects)
 			{
+
 				Conditional eff=obj as Conditional;
 				if(eff==null)
 				{
@@ -2619,7 +2623,7 @@ public class SingleGame
 			for(int i=0; i<30; i++)
 				deck.Add(generateRandomCardTemplate());
 			//_GameData["DECK"]=deck;
-			_GameData["HAND"]=new List<Conditional>();
+			//_GameData["HAND"]=new List<Conditional>();
 			//List<Conditional> effs=new List<Conditional>();
 		//	Conditional drawRule=_GameData["drawRule"] as Conditional;
 			//Debug.Log(drawRule);
@@ -2913,6 +2917,7 @@ public class SingleGame
 					if(stack[lname]!=null)
 					{
 						IList lst=stack[lname] as IList;
+				
 						if(lst!=null)
 						{
 							foreach(object pcn in lst)
@@ -3458,7 +3463,12 @@ public class SingleGame
 					return false;
 				}
 				object cval=cnd[variable];
-       
+                if(cval is Conditional) //a list of one?
+				{
+					List<Conditional> vl=new List<Conditional>();
+					vl.Add (cval as Conditional);
+					cval=vl;
+				}
 				if(!(cval is IList))
 					return false;
 				IList ccnds=cval as IList;
@@ -3578,6 +3588,8 @@ public class SingleGame
 				;
 				break;
 			}
+			//Debug.Log(string.Format("{0}: {1} ({2}), {3}  {4} in {5} {6}",type,variable,val,values[0],ncmpval,cnd,cnd["slot"]));
+
 			switch(type)
 			{
 			case Type.GREATER:
