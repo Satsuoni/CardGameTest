@@ -67,17 +67,22 @@ conditional activateRule
 {
 tag MAIN_RULE
 tag INVIOLATE
-condition _condition { true }
+condition _condition { inverse or { DidSelectCard } }
 function _commands
 {
 
 foreach _Game._Players
 {
+accumulate condition { and { notCastableTransform condition { tag ACTIVE } } } _target.HAND _todeacc
+foreach _todeacc
+ {
+ tag_remove _target ACTIVE
+ }
+
 accumulate condition { and { castableTransform condition { inverse tag ACTIVE } } } _target.HAND _toacc
 foreach _toacc
  {
  tag_set _target ACTIVE
- hook activate _target
  }
 }
 
@@ -243,9 +248,48 @@ function _commands
   }
 }
 
-
-
-list _Entities
+conditional fillEntitiesRule
 {
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition { any _Game condition { inverse tag ENTITIES_DONE }  }
+function _commands
+  {
 
+  newlist _Game._Entities  
+  foreach _Game._Players
+   {
+   push _Game._Entities  _target
+   set _tmp <=_target
+   foreach _target.DECK
+     {
+     push _Game._Entities  _target
+     }
+   foreach _target.DEFAULT_BODY
+     {
+     push _tmp.BODY _target
+     push _Game._Entities  _target
+     }
+   }
+  push _Game._Entities  DistanceTicker 
+  push _Game._Entities  DistanceTickerMelee 
+  push _Game._Entities  DistanceTickerMid
+  push _Game._Entities  DistanceTickerFar
+  push _Game._Entities  Timeline 
+  tag_set _Game ENTITIES_DONE
+  }
+}
+
+
+
+
+conditional highlightTargetsOfSelectedRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition DidSelectCard
+function _commands
+  {
+   hook highlight _Game.SELECTED
+   }
 }

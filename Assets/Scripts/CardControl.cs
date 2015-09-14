@@ -85,17 +85,106 @@ public static class rtExt
 		return new Vector4(dmin.x/crct.width,dmin.y/crct.height,dmax.x/crct.width,dmax.y/crct.height);
 	}
 }
-public class CardControl : MonoBehaviour {
-
+public class CardControl : MonoBehaviour, UnityEngine.EventSystems.IBeginDragHandler,  UnityEngine.EventSystems.IDragHandler,UnityEngine.EventSystems.IEndDragHandler, UnityEngine.ICanvasRaycastFilter
+{
 	public UnityEngine.UI.RawImage cardImg;
 	public UnityEngine.UI.RawImage glow;
 	public UnityEngine.UI.Text text;
+	SingleGame.Conditional game;
+	RectTransform rtransform;
+	RectTransform canv;
+
+	const string sel="SELECTED";
+
+	#region ICanvasRaycastFilter implementation
+
+
+	public bool IsRaycastLocationValid (Vector2 sp, Camera eventCamera)
+	{
+		return !isDragging;
+	}
+
+
+	#endregion
+
+	#region IEndDragHandler implementation
+	bool didFinishDragging=false;
+	bool dropSuccess=false;
+	public void registerDropSuccess(bool ds)
+	{
+		dropSuccess=ds;
+	}
+	public void OnEndDrag (UnityEngine.EventSystems.PointerEventData eventData)
+	{
+		if(	game[sel]==cardData)
+			game[sel]=null;
+		if(cardData.hasTag("ACTIVE"))
+		{
+			isDragging=false;
+		}
+		if(wasDragged)
+		{
+		//rtransform.localScale=new Vector3(1f,1f,1f);
+		//rtransform.anchoredPosition=oPos;
+			didFinishDragging=true;
+		}
+	}
+
+	#endregion
+
+
+
+
+	#region IDragHandler implementation
+
+	public void OnDrag (UnityEngine.EventSystems.PointerEventData eventData)
+	{
+		//Debug.Log(string.Format("Dragging {0}",gameObject));
+
+		if(cardData.hasTag("ACTIVE"))
+		{
+			//Debug.Log(string.Format("Pos {0}", eventData.position));
+			wasDragged=true;
+			Vector2 lp;
+			RectTransformUtility.ScreenPointToLocalPointInRectangle(canv, eventData.position,eventData.pressEventCamera,out lp);
+			rtransform.anchoredPosition=oPos+ lp-ePos;
+			rtransform.SetAsLastSibling();
+		}
+	}
+
+	#endregion
+
+	#region IBeginDragHandler implementation
+	Vector4 originPos;
+	Vector2 oPos;
+	Vector2 ePos;
+	bool wasDragged=false;
+	bool isDragging=false;
+	public void OnBeginDrag (UnityEngine.EventSystems.PointerEventData eventData)
+	{
+		//Debug.Log(string.Format("Drag {0}",gameObject));
+		if(cardData.hasTag("ACTIVE"))
+		{
+			isDragging=true;
+			///allow dragging
+			//eventData.pos
+			rtransform.localScale=new Vector3(1.3f,1.3f,1.3f);
+			oPos=rtransform.anchoredPosition;
+			RectTransformUtility.ScreenPointToLocalPointInRectangle(canv, eventData.position,eventData.pressEventCamera,out ePos);
+			game[sel]=cardData;
+		}
+	}
+	#endregion
+
+
 //	CardFlip flip;
 	// Use this for initialization
 	public SingleGame.Conditional cardData;
 
 	void Start () {
 		//flip=gameObject.GetComponent<CardFlip>();
+		rtransform=gameObject.GetComponent<RectTransform>();
+				canv=rtransform.RootCanvasTransform();
 		text.text=cardData[SingleGame._cardText] as string;
 		string imgname=cardData["_cardImage"] as string;
 		if(imgname !=null)
@@ -104,10 +193,21 @@ public class CardControl : MonoBehaviour {
 			if(txt!=null)
 				cardImg.texture=txt;
 		}
+		game=cardData[SingleGame._rootl] as SingleGame.Conditional;
+
 	}
 	
 	// Update is called once per frame
 	void Update () {
 		glow.gameObject.SetActive(cardData.hasTag("ACTIVE"));
+		if(didFinishDragging)
+		{
+			if(!dropSuccess)
+			{
+			rtransform.localScale=new Vector3(1f,1f,1f);
+			rtransform.anchoredPosition=oPos;
+			}
+			didFinishDragging=false;
+		}
 	}
 }

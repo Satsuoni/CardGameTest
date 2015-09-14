@@ -35,6 +35,7 @@ conditional defaultBodypart
 tag ATTACK_BLUNT
 tag FREE
 tag DEFAULT_BODYPART
+tag BODY
 float _Energy 0
 }
 
@@ -97,12 +98,7 @@ conditional _ defaultRLeg
 
 list BODY
 {
-conditional _ defaultHead
-conditional _ defaultLHand
-conditional _ defaultRHand
-conditional _ defaultTorso
-conditional _ defaultLLeg
-conditional _ defaultRLeg
+
 }
 
 }

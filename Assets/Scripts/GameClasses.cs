@@ -2448,7 +2448,7 @@ public class SingleGame
 			}
 			stack[_effects]=wrappedEffects;
 			stack[_target]=null;
-
+			stack[_rootl]=_GameData;
       Debug.Log(string.Format("effects : {0}",wrappedEffects.Count));
 			while(runThread)
 			{
@@ -2462,7 +2462,7 @@ public class SingleGame
 						//Debug.Log(cnd);
 						if(cnd.isFulfilled(stack,stack[_Game] as Conditional))
 						{
-							Debug.Log(cnd);
+							//Debug.Log(cnd);
 							Operation op=new Operation(Operation.Commands.NEW);
 							Conditional nstack=op.createStack(stack, eff);
               //Debug.Log(string.Format("nstack effects : {0}",(nstack[_effects] as IList).Count));

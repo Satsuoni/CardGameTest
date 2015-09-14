@@ -132,3 +132,16 @@ enoughCastCost
 hasSlots
 }
 }
+
+condition notCastableTransform
+{
+inverse
+or {
+castableTransform
+}
+}
+
+condition DidSelectCard
+{
+isset |-.SELECTED
+}

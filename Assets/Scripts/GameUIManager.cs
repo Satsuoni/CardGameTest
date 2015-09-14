@@ -20,7 +20,7 @@ public class GameUIManager : MonoBehaviour {
 	}
 	IEnumerator draw()
 	{
-		Debug.Log(_game.hookData["_Owner"]);
+//		Debug.Log(_game.hookData["_Owner"]);
 		if(_game.hookData["_Owner"]!=_game._GameData["Player1"])
 		{
 			SingleGame.GameManager.endHook();
@@ -69,6 +69,14 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="draw")
 		{
 			StartCoroutine(draw ());
+			return;
+		}
+		if(name=="highlight")
+		{
+			Debug.Log("highlight");
+			Debug.Log(data);
+			SingleGame.GameManager.endHook();
+			hooks.Remove("highlight");
 			return;
 		}
 		if(name=="log")

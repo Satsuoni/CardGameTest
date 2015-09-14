@@ -8,11 +8,34 @@ Player2
 list _effects
 {
 idRule
+fillEntitiesRule
 ownRule
 getMainPlayer
 drawRule
 shuffleRule
 dismissRule
 activateRule
+highlightTargetsOfSelectedRule
 }
 
+list _Entities
+{
+
+}
+
+conditional DistanceTicker
+{
+}
+
+conditional DistanceTickerMelee
+{
+}
+conditional DistanceTickerMid
+{
+}
+conditional DistanceTickerFar
+{
+}
+conditional Timeline
+{
+}
