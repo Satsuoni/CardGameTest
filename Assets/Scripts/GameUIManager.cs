@@ -27,7 +27,30 @@ public class GameUIManager : MonoBehaviour {
 		_game=new SingleGame.GameManager();
 		_game.Start();
     StartCoroutine(init());
+    StartCoroutine("timeProgression");
 	}
+  float timeSinceLastUpdate=0;
+  IEnumerator timeProgression()
+  {
+    while(true)
+    {
+     // lock(SingleGame.gameLock)
+      //{
+    timeSinceLastUpdate+=Time.deltaTime;
+    if(!_game._GameData.hasTag("UPDATE_TIME"))
+    {
+				lock(SingleGame.gameLock)
+				{
+      _game._GameData["deltaTime"]=timeSinceLastUpdate;
+      //  Debug.Log(timeSinceLastUpdate);
+      timeSinceLastUpdate=0;
+      _game._GameData.setTag("UPDATE_TIME");
+				}
+    }
+      //}
+    yield return null;
+    }
+  }
   IEnumerator init()
   {
     while(!_game._GameData.hasTag("ENTITIES_DONE"))

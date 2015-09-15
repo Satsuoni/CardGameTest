@@ -83,10 +83,14 @@ while <condition cond> {<list of commands>}
 condition_and <string val_name> <condition toadd>
 condition_or <string val_name> <condition toadd>
 
+insert <string to_insert> <string listname> <string varname> //inserts sorted by variable??
 
 if <string var_name> <condition cond>  {<list of commands>}
 
+execute <string stackvarname> <list commands>
 
+Need execute...
+Does it work on Stack as well?
 I want an if XD
 
 Special tags and values: 

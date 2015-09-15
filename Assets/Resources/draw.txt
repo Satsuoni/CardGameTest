@@ -94,6 +94,12 @@ tag_set _target DECK
 set _target._Owner <=_tmp
 hook own _target
 }
+foreach _target.BODY
+{
+tag_set _target BODY
+set _target._Owner <=_tmp
+hook own _target
+}
 clear _tmp
 }
 clear _tmpl
@@ -291,6 +297,7 @@ clear _Game.SELECTED
   }
  
 }
+
 conditional highlightTargetsOfSelectedRule
 {
 tag MAIN_RULE
@@ -298,6 +305,7 @@ tag INVIOLATE
 condition _condition DidSelectCard
 function _commands
   {
+
  tag_set _Game.SELECTED SEL
  accumulate condition { and {condition { tag ACTIVE } condition { inverse tag SEL } } } _Game._Entities _deacc
  foreach _deacc
@@ -322,3 +330,58 @@ function _commands
 
   }
 }
+
+
+conditional castTransformToBodyRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition isTransformCastPrepared
+function _commands
+  {
+  set castPlayer <=|-.SELECTED._Owner
+  sub castPlayer.Energy <=|-.SELECTED._castCost 
+  clear event 
+  new event
+  set event._Owner <=|-.SELECTED._Owner
+  set event.Delay 0
+  set event.castSource <=|-.SELECTED
+  set event.castTarget <=|-.TARGETED
+  set event.Type TRANSFORM_CAST
+  tag_remove |-.TARGETED FREE
+  tag_set |-.TARGETED BUSY
+  insert event |-.Events Delay
+  tag_set |-.SELECTED DESELECT
+  clear |-.TARGETED
+  
+  }
+}
+
+conditional updateTimeRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition { any _Game condition { tag UPDATE_TIME } }
+function _commands
+ {
+ newlist cleanEvents
+ foreach _Game.Events
+ {
+  set dtime <=_target._Owner.timeflow
+  mul dtime <=_Game.deltaTime
+  sub _target.Delay <=dtime
+  if _target leDelayZero 
+   {
+   hook clear _target
+   push cleanEvents _target
+    }
+ }
+foreach cleanEvents
+{
+remove _Game.Events _target
+}
+clear cleanEvents
+ tag_remove _Game UPDATE_TIME
+ }
+}
+

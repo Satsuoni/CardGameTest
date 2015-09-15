@@ -46,7 +46,7 @@ public class SingleGame
 	public const string _Owner="_Owner";
 	public const string _Opponent="_Opponent";
 	public const string _Source="_Source";
-	public static readonly string[] __stackValues={_Game,_Owner,_Opponent};
+	public static readonly string[] __stackValues={_Game,_Owner,_Opponent,_rootl};
 	public const string _template="_template";
 	public const string _cardName="_cardName";
 	public const string _cardText="_cardText";
@@ -1641,6 +1641,43 @@ public class SingleGame
         res=true;
         return ret;
       }
+      case Operation.Commands.INSERT:
+      {
+        string varval=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach list  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string listval=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach list  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string sortval=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach list  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(varval);
+        args.Add(listval);
+        args.Add(sortval);
+        ret=new Operation(Operation.Commands.INSERT);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
       case Operation.Commands.FOREACH:
       {
         string listval=readString(_txt,ref pos,out result);
@@ -1682,6 +1719,58 @@ public class SingleGame
         args.Add(listval);
         args.Add(lst);
         ret=new Operation(Operation.Commands.FOREACH);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
+
+      case Operation.Commands.EXECUTE:
+      {
+        string valname=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read execute variable  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(valname);
+        string ob=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read execute function  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(ob!="{"&&!ob.StartsWith(_dr))
+        {
+          #if THING
+          Debug.LogWarning(string.Format("This is neither opening bracket nor a reference: {0} ",ob));
+          #endif
+          res=false;
+          return null;
+        }
+        if(ob!="{")
+        {
+          args.Add(ob);
+        }
+        else
+        {
+        List<Operation> lst=readOperationList(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read foreach operations at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        args.Add(lst);
+        }
+        ret=new Operation(Operation.Commands.EXECUTE);
         ret[_args]=args;
         res=true;
         return ret;
@@ -2766,6 +2855,8 @@ public class SingleGame
 			CONDITION_AND,
 			CONDITION_OR,
       IF,
+      INSERT,
+			EXECUTE,
 			ERROR
 		}
 		Commands _command;
@@ -2803,6 +2894,8 @@ public class SingleGame
 			case "condition_and":return Commands.CONDITION_AND;
 			case "condition_or":return Commands.CONDITION_OR;
       case "if":return Commands.IF;
+      case "insert":return Commands.INSERT;
+			case "execute":return Commands.EXECUTE;
       }
      
       return Commands.ERROR;
@@ -2868,7 +2961,7 @@ public class SingleGame
       {
 			if(stack.hasTag(TAG_ABORT))
 				return;
-			Conditional target=stack[_target] as Conditional;
+//			Conditional target=stack[_target] as Conditional;
 			//IList args=this[_args] as IList;
 			switch(_command)
 			{
@@ -2935,33 +3028,71 @@ public class SingleGame
 			case Commands.VALUE_SET:
 				{
        // Conditional ct=(stack[this["arg0"] as string] as Conditional);
+         // Debug.Log(this["arg0"] as string);
+         // Debug.Log((this["arg1"] as string).Substring(_drl));
+          //Debug.Log(stack["|-"]);
         if(this["arg1"]is string&&(this["arg1"] as string).StartsWith(_dr))
 					{
 				     stack[this["arg0"] as string]=stack[(this["arg1"] as string).Substring(_drl)];
 					} else
           stack[this["arg0"] as string]=this["arg1"];}
 				break;
+        case Commands.INSERT:
+        {
+          Conditional cndi=stack[this["arg0"] as string] as Conditional;
+          IList lst=stack[this["arg1"] as string] as IList;
+          string vl=this["arg2"] as string;
+          if(lst!=null&&cndi!=null&&cndi[vl]!=null)
+          {
+            System.IComparable ins=cndi[vl] as System.IComparable;
+            int ind=0;
+          foreach(object o in lst)
+            {
+              Conditional ccc=o as Conditional;
+              if(ccc!=null&&ccc[vl]!=null)
+              {
+                System.IComparable cr=ccc[vl] as System.IComparable;
+                if(ins.CompareTo(cr)<0) {break;};
+              }
+              ind++;
+            }
+            lst.Insert(ind,cndi);
+            Debug.Log(ind);
+          }
+          else
+          {
+            Debug.Log("Invalid list : "+(this["arg0"] as string));
+          }
+          if(this["arg1"]is string&&(this["arg1"] as string).StartsWith(_dr))
+          {
+            stack[this["arg0"] as string]=stack[(this["arg1"] as string).Substring(_drl)];
+          } else
+            stack[this["arg0"] as string]=this["arg1"];}
+          break;
 			case Commands.ADD:
 				{
-        object a1=target[this["arg0"] as string];
+        object a1=stack[this["arg0"] as string];
         object a2=deRef(this["arg1"], stack);
         stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)+System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.SUBTRACT:
 				{
-        object a1=target[this["arg0"] as string];
+         // Debug.Log(this["arg0"]);
+          //Debug.Log(stack["castPlayer"]);
+        object a1=stack[this["arg0"] as string];
+         
         object a2=deRef(this["arg1"], stack);
         stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)-System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.MULTIPLY:
 				{
-					object a1=target[this["arg0"] as string];
+					object a1=stack[this["arg0"] as string];
 					object a2=deRef(this["arg1"], stack);
 					stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)*System.Convert.ToDouble(a2), a1.GetType());}
 				break;
 			case Commands.DIVIDE:
 				{
-					object a1=target[this["arg0"] as string];
+					object a1=stack[this["arg0"] as string];
 					object a2=deRef(this["arg1"], stack);
 					stack[this["arg0"] as string]=System.Convert.ChangeType(System.Convert.ToDouble(a1)/System.Convert.ToDouble(a2), a1.GetType());}
 				break;
@@ -2979,7 +3110,12 @@ public class SingleGame
 				{
 					string nm=this["arg0"] as string;
 					if(stack[nm] as Conditional==null)
-						stack[nm]=new Conditional();
+					{
+						Conditional cn=new Conditional();
+						cn[_rootl]=stack[_rootl];
+
+						stack[nm]=cn;
+					}
 				}
 				break;
 			case Commands.NEWLIST:
@@ -2995,6 +3131,29 @@ public class SingleGame
 					stack[_returnValue]=this["arg0"] as Operation;
 				}
 				break;
+        case Commands.EXECUTE:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack this["arg1"]->list of commands
+        {
+          object oldtarget=stack[_target];
+          string cname=this["arg0"] as string;
+          Conditional pseudostack=stack[cname] as Conditional;
+          if(pseudostack!=null)
+          {
+            IList lst=deRef(this["arg1"],stack) as IList;
+            
+            if(lst!=null)
+            {
+              executeList(lst, pseudostack);
+             
+            } else
+            {
+              #if THING
+              Debug.Log(string.Format("Invalid execute argument: {0}", this["arg1"]));
+              #endif
+            }
+          }
+          stack[_target]=oldtarget;
+        }
+          break;
 			case Commands.FOREACH:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack this["arg1"]->list of commands
 				{
         object oldtarget=stack[_target];
@@ -3546,7 +3705,9 @@ public class SingleGame
         string cmpr=(values[0] as string);
         if(cmpr.StartsWith(_dr))
           cmpr=cnd[cmpr.Substring(_drl)] as string;
-        //Debug.Log(val2);
+       // Debug.Log(variable);
+       // Debug.Log(cmpr);
+       // Debug.Log(val2);
 				if(val2==null)
 					return false;
 				return (val2==cmpr);

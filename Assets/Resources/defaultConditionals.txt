@@ -76,7 +76,7 @@ conditional Player
 string _name unset
 
 float Energy 1000
-
+float timeflow 1
 list HAND
 { }
 

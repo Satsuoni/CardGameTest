@@ -17,9 +17,16 @@ dismissRule
 activateRule
 deselectRule
 highlightTargetsOfSelectedRule
+castTransformToBodyRule
+updateTimeRule
 }
 
 list _Entities
+{
+
+}
+
+list Events
 {
 
 }

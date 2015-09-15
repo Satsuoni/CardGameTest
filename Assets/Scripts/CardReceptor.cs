@@ -108,15 +108,20 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler {
 			{
         if(data!=null&&data.hasTag("TARGETABLE"))
         {
-				Debug.Log(card);
-				RectTransform cardrt=card.gameObject.GetComponent<RectTransform>();
+          lock(SingleGame.gameLock)
+          {
+            SingleGame.GameManager.self._GameData["TARGETED"]=data;//card.cardData;
+
+          }
+				//Debug.Log(card);
+				/*RectTransform cardrt=card.gameObject.GetComponent<RectTransform>();
 				cardrt.SetParent(gameObject.transform,false);
 				cardrt.anchorMin=Vector2.zero;
 				cardrt.anchorMax=Vector2.one;
 				cardrt.offsetMax=Vector2.zero;
 				cardrt.offsetMin=Vector2.zero;
-				cardrt.localScale=new Vector3(1,1,1);
-				card.registerDropSuccess(true);
+				cardrt.localScale=new Vector3(1,1,1);*/
+				card.registerDropSuccess(false);
         }
         else
          card.registerDropSuccess(false);

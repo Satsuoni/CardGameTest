@@ -21,3 +21,12 @@ function _commands
  return hook log _Game.txt2
  }
 }
+ accumulate condition { any |-.SELECTED condition { tag <=<<.slot } } |-.TARGETED._Owner.BODY _remFromBody
+foreach _remFromBody
+{
+remove |-.TARGETED._Owner.BODY _target
+}
+  clear _remFromBody
+
+
+condition { strcomp |-.SELECTED._Owner.playerID <=|-.TARGETED._Owner.playerID }

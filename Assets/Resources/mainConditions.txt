@@ -106,7 +106,7 @@ any _Game._Entities forDismissal
 condition hasSlots
 {
 count _Owner.BODY
-      condition { any << condition { tag <=<<.slot } }
+      condition { and { condition {any << condition { tag <=<<.slot } } condition { tag FREE } } }
       condition { equal _count <=<<.slots }
 }
 
@@ -146,6 +146,11 @@ condition DidSelectCard
 isset |-.SELECTED
 }
 
+condition DidTargetCard
+{
+isset |-.TARGETED
+}
+
 condition isTargetOfSelected
 {
 or 
@@ -155,9 +160,30 @@ condition {
          {
          condition { any |-.SELECTED castableTransform }
          condition { tag BODY }
+         condition { tag FREE }
          condition { inverse tag TRANSFORM }
          condition { any |-.SELECTED condition { tag <=<<.slot } }
+         condition { strcomp |-.SELECTED._Owner.playerID <=_Owner.playerID }
+
          }
          }
  }
+}
+
+condition isTransformCastPrepared
+{
+ and
+ {
+  DidSelectCard
+  condition { any |-.SELECTED castableTransform }
+  DidTargetCard
+ condition { strcomp |-.SELECTED._Owner.playerID <=|-.TARGETED._Owner.playerID }
+  
+ } 
+
+}
+
+condition leDelayZero
+{
+le Delay 0
 }
