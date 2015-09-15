@@ -87,6 +87,9 @@ public static class rtExt
 }
 public class CardControl : MonoBehaviour, UnityEngine.EventSystems.IBeginDragHandler,  UnityEngine.EventSystems.IDragHandler,UnityEngine.EventSystems.IEndDragHandler, UnityEngine.ICanvasRaycastFilter
 {
+
+	public int slotPos {get;set;}
+
 	public UnityEngine.UI.RawImage cardImg;
 	public UnityEngine.UI.RawImage glow;
 	public UnityEngine.UI.Text text;

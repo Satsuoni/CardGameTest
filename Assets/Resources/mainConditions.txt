@@ -123,10 +123,15 @@ condition enoughCastCost
 {
 ge _Owner.Energy  <=_castCost
 }
-
+condition notBusy
+{
+inverse
+tag BUSY
+}
 condition castableTransform
 {
 and {
+notBusy
 isHandTransform
 enoughCastCost
 hasSlots

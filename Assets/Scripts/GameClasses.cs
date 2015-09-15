@@ -55,7 +55,8 @@ public class SingleGame
 	public const int _drl=2;
   public const string _parentl="<--|";
 	public const string _rootl="|-";
-//helper dictionaries
+  public const string _conditional_self="_";
+  //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
 //hooks
@@ -159,6 +160,8 @@ public class SingleGame
 				if(ln.Length==1)
 				{
 					object ret=null;
+          if(ln[0]==_conditional_self)
+            return this;
 					if(_values.TryGetValue(ln[0], out ret))
 						return ret;
 					else
@@ -2630,6 +2633,7 @@ public class SingleGame
 					{
 						Condition cnd=eff[_condition] as Condition;
 						//Debug.Log(cnd);
+						//Monitor.Enter(gameLock);
 						if(cnd.isFulfilled(stack,stack[_Game] as Conditional))
 						{
 							//Debug.Log(cnd);
@@ -2643,6 +2647,8 @@ public class SingleGame
 								return;//gameover? I guess
 							}
 						}
+
+						//Monitor.Exit(gameLock);
 					}
 				}
 			}
@@ -2957,7 +2963,8 @@ public class SingleGame
 		}
 		void  __pureExecute(Conditional stack)
 		{
-      lock(gameLock)
+	
+    
       {
 			if(stack.hasTag(TAG_ABORT))
 				return;
@@ -3142,7 +3149,10 @@ public class SingleGame
             
             if(lst!=null)
             {
+              object st= pseudostack[_effects];
+              pseudostack[_effects]=stack[_effects];
               executeList(lst, pseudostack);
+              pseudostack[_effects]=st;
              
             } else
             {
@@ -3406,14 +3416,17 @@ public class SingleGame
 				break;
 			case Commands.HOOK: //call hook of name with data
 				{
+					//Monitor.Exit(gameLock);
 					string nm=this["arg0"] as string;
 					string nmData=this["arg1"] as string;
 					GameManager.startHook(nm, stack[nmData] as Conditional);
+					//Monitor.Enter(gameLock);
 				}
 				;
 				break;
 			case Commands.CHOICE: //call for player choice, store result  in arg2: 
 				{
+					//Monitor.Exit(gameLock);
 					string chname=this["arg0"] as string;
 					string nm=this["arg1"] as string;
 					IList lst=stack[nm] as IList;
@@ -3426,7 +3439,9 @@ public class SingleGame
 					}
 					string nmRet=this["arg2"] as string;
 					Conditional ret=GameManager.startChoice(chname, lst);
+					//Monitor.Enter(gameLock);
 					stack[nmRet]=ret;
+          
 				}
 				;
 				break;

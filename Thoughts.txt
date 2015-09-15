@@ -122,5 +122,9 @@ _dr="<=";
 TODO:
 Dereference strings?
 
-Root : |-
+Root (_Game)  : |-
+Up the condition hierarchy: <<
+Dereference: <=
+self: _
+
 

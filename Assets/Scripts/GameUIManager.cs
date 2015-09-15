@@ -3,7 +3,13 @@ using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 public class GameUIManager : MonoBehaviour {
-
+	public enum UIArea
+	{
+		HAND,
+		DECK,
+		DISCARD,
+		BODY
+	}
 	public CardControl cardPrefab;
 	SingleGame.GameManager _game;
 	//SingleGame
@@ -29,6 +35,7 @@ public class GameUIManager : MonoBehaviour {
     StartCoroutine(init());
     StartCoroutine("timeProgression");
 	}
+	bool collectTime=false;
   float timeSinceLastUpdate=0;
   IEnumerator timeProgression()
   {
@@ -36,6 +43,7 @@ public class GameUIManager : MonoBehaviour {
     {
      // lock(SingleGame.gameLock)
       //{
+			if(collectTime)
     timeSinceLastUpdate+=Time.deltaTime;
     if(!_game._GameData.hasTag("UPDATE_TIME"))
     {
@@ -68,6 +76,7 @@ public class GameUIManager : MonoBehaviour {
    rlegRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_RLEG");
     player1=_game._GameData["Player1"] as SingleGame.Conditional;
      initDone=true;
+		collectTime=true;
   }
 	IEnumerator draw()
 	{
@@ -78,6 +87,7 @@ public class GameUIManager : MonoBehaviour {
 			hooks.Remove("draw");
 			yield break;
 		}
+		collectTime=false;
 		RectTransform rt=deck.RootCanvasTransform();
 		GameObject crd=Instantiate(card) as GameObject;
 		CardControl crc=crd.GetComponent<CardControl>();
@@ -96,12 +106,14 @@ public class GameUIManager : MonoBehaviour {
 		can.middle=flipper;
 		IList plst=_game._GameData["_Players"] as IList;
 		IList lst=(plst[0] as SingleGame.Conditional)["HAND"] as IList;
-		int cnt=lst.Count;
+
+		int cnt=lst.Count-1;
 		if (cnt>=7) cnt=6;
 		can.hand=handSlots[cnt];
 		while(!can.done) yield return null;
 		SingleGame.GameManager.endHook();
 		hooks.Remove("draw");
+		collectTime=true;
 		yield break;
 	}
   void ExecuteChoice(string name,IList lst )
@@ -113,7 +125,13 @@ public class GameUIManager : MonoBehaviour {
     }
     SingleGame.GameManager.endChoice(null);
   }
- 
+ IEnumerator trans()
+	{
+		Debug.Log("trans");
+		hooks.Remove("transformation");
+		SingleGame.GameManager.endHook();
+		yield break;
+	}
 	void ExecuteHookWithNameAndData(string name,SingleGame.Conditional data )
 	{
 		hooks.Add(name);
@@ -147,13 +165,18 @@ public class GameUIManager : MonoBehaviour {
       SingleGame.GameManager.endHook();
       return;
     }
+		if(name=="transformation")
+		{
+			StartCoroutine(trans());
+			return;
+       }
     Debug.Log(string.Format("Undefined Hook called: {0}",name));
 		hooks.Remove(name);
 		SingleGame.GameManager.endHook();
 	}
 	// Update is called once per frame
 	void Update () {
-  
+		if(!initDone) return;
 	if(_game.hookInProgress&&!hooks.Contains(_game.hookName))
 		{
 			ExecuteHookWithNameAndData(_game.hookName,_game.hookData);

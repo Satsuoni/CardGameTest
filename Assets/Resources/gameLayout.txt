@@ -7,8 +7,8 @@ Player2
 
 list _effects
 {
-idRule
 fillEntitiesRule
+idRule
 ownRule
 getMainPlayer
 drawRule

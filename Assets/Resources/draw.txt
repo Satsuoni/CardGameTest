@@ -42,9 +42,9 @@ foreach _tmpl
 {
 any _target.DECK _tmp
 remove _target.DECK _tmp
-hook draw _tmp
 push _target.HAND _tmp
 tag_switch _tmp DECK HAND
+hook draw _tmp
 
 }
 clear _tmpl }
@@ -92,13 +92,13 @@ foreach _target.DECK
 {
 tag_set _target DECK
 set _target._Owner <=_tmp
-hook own _target
+
 }
 foreach _target.BODY
 {
 tag_set _target BODY
 set _target._Owner <=_tmp
-hook own _target
+
 }
 clear _tmp
 }
@@ -331,6 +331,21 @@ function _commands
   }
 }
 
+function transform_cast
+{
+ accumulate condition { any <<.castSource condition { tag <=<<.slot } } castTarget._Owner.BODY _remFromBody
+ foreach _remFromBody
+ {
+  tag_remove _target BODY
+  tag_remove _target BUSY
+  remove castTarget._Owner.BODY  _target
+ }
+ tag_remove castSource HAND
+ remove castSource._Owner.HAND castSource
+ tag_set castSource BODY
+ push castSource._Owner.BODY castSource
+ hook transformation _target
+}
 
 conditional castTransformToBodyRule
 {
@@ -347,9 +362,10 @@ function _commands
   set event.Delay 0
   set event.castSource <=|-.SELECTED
   set event.castTarget <=|-.TARGETED
-  set event.Type TRANSFORM_CAST
+  set event.func  <=|-.transform_cast
   tag_remove |-.TARGETED FREE
   tag_set |-.TARGETED BUSY
+  tag_set |-.SELECTED BUSY
   insert event |-.Events Delay
   tag_set |-.SELECTED DESELECT
   clear |-.TARGETED
@@ -372,7 +388,7 @@ function _commands
   sub _target.Delay <=dtime
   if _target leDelayZero 
    {
-   hook clear _target
+   execute _target <=_target.func
    push cleanEvents _target
     }
  }

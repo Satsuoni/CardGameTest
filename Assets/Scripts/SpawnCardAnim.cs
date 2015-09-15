@@ -2,7 +2,7 @@
 using System.Collections;
 
 public class SpawnCardAnim : MonoBehaviour {
-
+  public float flydur=0.2f;
 	public RectTransform middle;
 	public RectTransform hand;
 	public bool done=false;
@@ -14,7 +14,7 @@ public class SpawnCardAnim : MonoBehaviour {
 	{
 		RectTransform me=gameObject.GetComponent<RectTransform>();
 		me.SetAsLastSibling();
-		IAnimInterface a1=RectTransfer.Apply(gameObject,middle,0.5f);
+		IAnimInterface a1=RectTransfer.Apply(gameObject,middle,flydur);
 		a1.Run();
 		while(!a1.isDone) yield return null;
 		Destroy(a1 as Component);
@@ -22,7 +22,7 @@ public class SpawnCardAnim : MonoBehaviour {
 		a1.Run();
 		while(!a1.isDone) yield return null;
 		//Destroy(a1 as Component);
-		a1=RectTransfer.Apply(gameObject,hand,0.5f);
+		a1=RectTransfer.Apply(gameObject,hand,flydur);
 		a1.Run();
 		while(!a1.isDone) yield return null;
 		Destroy(a1 as Component);
