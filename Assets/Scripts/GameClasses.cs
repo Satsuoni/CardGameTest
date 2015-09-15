@@ -63,6 +63,7 @@ public class SingleGame
 //classes
 	public static System.Random RNG=new System.Random();
 	static object rnglock=new object();
+  public static object gameLock=new object();
 	public static int rngRange(int from, int to)
 	{
 		int ret;
@@ -1685,6 +1686,86 @@ public class SingleGame
         res=true;
         return ret;
       }
+      case Operation.Commands.IF:
+      {
+        string listval=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read if variable  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        string condname=readString(_txt,ref pos,out result);
+        Condition a1=null;
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read if condition  at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(condname=="condition")
+        {
+          a1=readCondition(_txt,ref pos,out result);
+          if(!result){
+            #if THING
+            Debug.LogWarning(string.Format("Couldn't read if cond  at pos: {0} ",pos));
+            #endif
+            res=false;
+            return null;}
+          
+        }
+        else
+        {
+          a1=getFromContext(condname) as Condition;
+          if(a1==null)
+          {
+            #if THING
+            Debug.LogWarning(string.Format("Condition not defined : {0}  ",condname));
+            #endif
+            res=false;
+            return null;
+          }
+          
+        }
+        string ob=readString(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read if statement at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        if(ob!="{")
+        {
+          #if THING
+          Debug.LogWarning(string.Format("No opening bracket, this: {0} ",ob));
+          #endif
+          res=false;
+          return null;
+        }
+        List<Operation> lst=readOperationList(_txt,ref pos,out result);
+        if(!result)
+        {
+          #if THING
+          Debug.LogWarning(string.Format("Couldn't read if operations at pos: {0} ",pos));
+          #endif
+          res=false;
+          return null;
+        }
+        
+        args.Add(listval);
+        args.Add(a1);
+        args.Add(lst);
+        ret=new Operation(Operation.Commands.IF);
+        ret[_args]=args;
+        res=true;
+        return ret;
+      }
 			case Operation.Commands.CONDITION_AND:
 			{
 				string varname=readString(_txt,ref pos,out result);
@@ -2385,7 +2466,7 @@ public class SingleGame
 		bool runThread=false;
 		Thread gameThread;
 		EventWaitHandle _waitHandle ;
-		static GameManager self=null;
+		static public GameManager self=null;
 
 		bool _choiceInProgress=false;
 
@@ -2684,6 +2765,7 @@ public class SingleGame
 			/// Condition manipulation
 			CONDITION_AND,
 			CONDITION_OR,
+      IF,
 			ERROR
 		}
 		Commands _command;
@@ -2720,6 +2802,7 @@ public class SingleGame
       case "while":return Commands.WHILE;
 			case "condition_and":return Commands.CONDITION_AND;
 			case "condition_or":return Commands.CONDITION_OR;
+      case "if":return Commands.IF;
       }
      
       return Commands.ERROR;
@@ -2781,6 +2864,8 @@ public class SingleGame
 		}
 		void  __pureExecute(Conditional stack)
 		{
+      lock(gameLock)
+      {
 			if(stack.hasTag(TAG_ABORT))
 				return;
 			Conditional target=stack[_target] as Conditional;
@@ -2947,6 +3032,27 @@ public class SingleGame
         stack[_target]=oldtarget;
       }
 				break;
+      case Commands.IF:// arguments: var name, cond, list
+      {
+ 
+        string vname=this["arg0"] as string;
+        vname=deRef(vname,stack) as string;
+        Conditional vr=stack[vname] as Conditional;
+        Condition appl=this["arg1"] as Condition;
+        if(vr==null||appl==null)
+        {
+          #if THING
+          Debug.Log("Invalid variable or condition in the if statement");
+          #endif
+        }
+        else
+        {
+          if(appl.isFulfilled(vr,stack))
+           executeList(this["arg2"], stack);
+        }
+       
+      }
+        break;
       case Commands.WHILE:// arguments: ...none? XD I guess list name would work. arg[0]-> list name in stack this["arg1"]->list of commands
       {
        // object oldtarget=stack[_target];
@@ -3168,7 +3274,7 @@ public class SingleGame
 
 			}
 			;
-
+      }
 		}
 		public Operation executeList(object lst, Conditional stack) //has *new* stack as parameter
 		{

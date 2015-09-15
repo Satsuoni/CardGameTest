@@ -39,32 +39,32 @@ tag BODY
 float _Energy 0
 }
 
-conditional defaultHead
+conditional defaultHead defaultBodypart
 {
 string slot SLOT_HEAD
 }
 
-conditional defaultLHand
+conditional defaultLHand defaultBodypart
 {
 string slot SLOT_LHAND
 }
 
-conditional defaultRHand
+conditional defaultRHand defaultBodypart
 {
 string slot SLOT_RHAND
 }
 
-conditional defaultTorso
+conditional defaultTorso defaultBodypart
 {
 string slot SLOT_TORSO
 }
 
-conditional defaultLLeg
+conditional defaultLLeg defaultBodypart
 {
 string slot SLOT_LLEG
 }
 
-conditional defaultRLeg
+conditional defaultRLeg defaultBodypart
 {
 string slot SLOT_RLEG
 }

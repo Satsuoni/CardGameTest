@@ -52,7 +52,7 @@ public class RectTransfer : MonoBehaviour, IAnimInterface {
     
 	public RectTransform to;
 	public float duration=1.0f;
-	RectTransform from;
+//	RectTransform from;
 	RectTransform us;
 //	Rect start;
 //	Rect reference;
@@ -63,7 +63,7 @@ public class RectTransfer : MonoBehaviour, IAnimInterface {
 	{
 //		Debug.Log("apply");
 		us=gameObject.GetComponent<RectTransform>();
-		from=us.parent as RectTransform;
+		//from=us.parent as RectTransform;
 		us.SetParent(us.RootCanvasTransform());
 		us.SetInternalAnchors (new Vector4 (0, 0, 1, 1));
 		//start=us.rect;

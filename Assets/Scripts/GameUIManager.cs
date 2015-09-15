@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System.Collections.Generic;
 public class GameUIManager : MonoBehaviour {
@@ -11,13 +12,40 @@ public class GameUIManager : MonoBehaviour {
 	public RectTransform flipper;
 	public GameObject card;
 	List<string> hooks=new List<string>();
-
+  public CardReceptor headRec;
+  public CardReceptor torsoRec;
+  public CardReceptor lhandRec;
+  public CardReceptor rhandRec;
+  public CardReceptor llegRec;
+  public CardReceptor rlegRec;
+  public Text energy;
+  SingleGame.Conditional player1;
+  bool initDone=false;
 	//Dictionary<string
 	// Use this for initialization
 	void Start () {
 		_game=new SingleGame.GameManager();
 		_game.Start();
+    StartCoroutine(init());
 	}
+  IEnumerator init()
+  {
+    while(!_game._GameData.hasTag("ENTITIES_DONE"))
+    {
+      yield return null;
+    }
+    headRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_HEAD");
+    torsoRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_TORSO");
+    lhandRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_LHAND");
+
+    rhandRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_RHAND");
+
+   llegRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_LLEG");
+
+   rlegRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_RLEG");
+    player1=_game._GameData["Player1"] as SingleGame.Conditional;
+     initDone=true;
+  }
 	IEnumerator draw()
 	{
 //		Debug.Log(_game.hookData["_Owner"]);
@@ -111,6 +139,9 @@ public class GameUIManager : MonoBehaviour {
     {
       ExecuteChoice(_game.choiceName,_game.choiceList);
     }
-
+    if(player1!=null&&energy!=null)
+    {
+      energy.text=player1["Energy"].ToString();
+    }
 	}
 }

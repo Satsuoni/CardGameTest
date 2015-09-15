@@ -15,6 +15,7 @@ drawRule
 shuffleRule
 dismissRule
 activateRule
+deselectRule
 highlightTargetsOfSelectedRule
 }
 

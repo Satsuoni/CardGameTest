@@ -117,7 +117,9 @@ public class CardControl : MonoBehaviour, UnityEngine.EventSystems.IBeginDragHan
 	public void OnEndDrag (UnityEngine.EventSystems.PointerEventData eventData)
 	{
 		if(	game[sel]==cardData)
-			game[sel]=null;
+    {
+      cardData.setTag("DESELECT");
+    }
 		if(cardData.hasTag("ACTIVE"))
 		{
 			isDragging=false;

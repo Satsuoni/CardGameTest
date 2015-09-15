@@ -145,3 +145,19 @@ condition DidSelectCard
 {
 isset |-.SELECTED
 }
+
+condition isTargetOfSelected
+{
+or 
+ {
+condition {
+       and
+         {
+         condition { any |-.SELECTED castableTransform }
+         condition { tag BODY }
+         condition { inverse tag TRANSFORM }
+         condition { any |-.SELECTED condition { tag <=<<.slot } }
+         }
+         }
+ }
+}
