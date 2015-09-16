@@ -123,7 +123,7 @@ TODO:
 Dereference strings?
 
 Root (_Game)  : |-
-Up the condition hierarchy: <<
+Up the condition hierarchy (or stack): <<
 Dereference: <=
 self: _
 

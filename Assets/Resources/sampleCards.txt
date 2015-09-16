@@ -59,8 +59,8 @@ function _effects { sub _target.Energy 20 }
 }
 conditional SampleAbility Ability
 {
-float _cost 20
-string sourceType ATTACK_BLUNT
+float _castCost 20
+string sourceType ATTACK_EDGE
 float delay 1
 function _effects {
 sub _target.Energy 50

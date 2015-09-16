@@ -9,7 +9,7 @@ string _cardImage "_"
 conditional Ability Card
 {
 tag ABILITY
-float _cost 0
+float _castCost 0
 string sourceType ATTACK_EDGE
 float delay 0.2
 function _effects { }

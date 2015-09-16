@@ -60,15 +60,15 @@ function _commands
 {
 foreach _Game._Players
 {
-accumulate condition { and { notCastableTransform condition { tag ACTIVE } } } _target.HAND _todeacc
-accumulate condition { and { notCastableTransform condition { tag ACTIVE } } } _target.BODY _todeacc
+accumulate condition { and { notActivatable condition { tag ACTIVE } } } _target.HAND _todeacc
+accumulate condition { and { notActivatable condition { tag ACTIVE } } } _target.BODY _todeacc
 foreach _todeacc
  {
  tag_remove _target ACTIVE
  }
 
-accumulate condition { and { castableTransform condition { inverse tag ACTIVE } } } _target.HAND _toacc
-foreach _toacc
+accumulate condition { and { Activatable condition { inverse tag ACTIVE } } } _target.HAND _toActivate
+foreach _toActivate
  {
  tag_set _target ACTIVE
  }
@@ -345,7 +345,10 @@ function transform_cast
  tag_remove castSource HAND
  remove castSource._Owner.HAND castSource
  tag_set castSource BODY
+ tag_set castSource FREE
+ tag_remove castSource BUSY
  push castSource._Owner.BODY castSource
+ set castSource.Energy <=castSource._durability
  hook transformation _
 }
 
@@ -375,6 +378,27 @@ function _commands
   }
 }
 
+
+condition trythis
+{
+and
+{
+condition { command_type _currentCommand sub } 
+condition { isset mcost } 
+condition { strcomp _currentCommand.arg0 _target._Owner.Energy } 
+}
+}
+
+conditional tryrule
+{
+tag EXECUTE_PREFIX
+condition _condition trythis
+function _commands
+ {
+ return set mcost -1
+ }
+}
+
 conditional updateTimeRule
 {
 tag MAIN_RULE
@@ -394,6 +418,7 @@ function _commands
    push cleanEvents _target
     }
  }
+
 
 foreach cleanEvents
 {

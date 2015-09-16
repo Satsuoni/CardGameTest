@@ -19,6 +19,7 @@ deselectRule
 highlightTargetsOfSelectedRule
 castTransformToBodyRule
 updateTimeRule
+
 }
 
 list _Entities
@@ -47,3 +48,4 @@ conditional DistanceTickerFar
 conditional Timeline
 {
 }
+string _distance MELEE 

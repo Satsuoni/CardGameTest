@@ -2946,6 +2946,7 @@ public class SingleGame
 				}
 				ret[_effects]=efs;
 			}
+			ret[_upcond]=oldstack;
 			ret[_target]=this;//current command becomes a target?
 			ret[_currentCommand]=null;
 			foreach(string nm in __stackValues)

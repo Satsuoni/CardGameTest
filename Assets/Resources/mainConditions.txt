@@ -119,6 +119,15 @@ and
  }
 }
 
+condition isHandAbility
+{
+and
+ {
+ condition { tag ABILITY } 
+ condition { tag HAND } 
+ }
+}
+
 condition enoughCastCost
 {
 ge _Owner.Energy  <=_castCost
@@ -138,6 +147,22 @@ hasSlots
 }
 }
 
+condition hasEmitter
+{
+any _Owner.BODY condition { tag <=<<.sourceType }
+}
+
+condition castableAbility
+{
+and {
+notBusy
+isHandAbility
+enoughCastCost
+hasEmitter
+condition { any |-._Entities condition { self <<._targetCond } }
+}
+}
+
 condition notCastableTransform
 {
 inverse
@@ -145,6 +170,25 @@ or {
 castableTransform
 }
 }
+
+condition Activatable
+{
+or
+{
+castableTransform
+castableAbility
+}
+}
+
+condition notActivatable
+{
+inverse
+or {
+Activatable
+}
+}
+
+
 
 condition DidSelectCard
 {
@@ -171,7 +215,19 @@ condition {
          condition { strcomp |-.SELECTED._Owner.playerID <=_Owner.playerID }
 
          }
+       
          }
+condition {
+        and
+         {
+         condition { any |-.SELECTED castableAbility }
+         condition { tag BODY }
+         condition { tag FREE }
+         condition {  tag <=|-.SELECTED.sourceType }
+         condition { strcomp |-.SELECTED._Owner.playerID <=_Owner.playerID }
+
+         }
+}
  }
 }
 

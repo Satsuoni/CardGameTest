@@ -230,6 +230,7 @@ public class GameUIManager : MonoBehaviour {
 						IAnimInterface an=RectTransfer.Apply(crd,targpos,shiftdur);
 						an.Run();
 						anims.Add(an);
+						cr.cardData=castCard;
 					}
 				}
 				Destroy(toMove.gameObject);
