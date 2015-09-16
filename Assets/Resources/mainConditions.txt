@@ -192,3 +192,7 @@ condition leDelayZero
 {
 le Delay 0
 }
+condition  hasMaintenance
+{
+isset _maintenanceCost
+}

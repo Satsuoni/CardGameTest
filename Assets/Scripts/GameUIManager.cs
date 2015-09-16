@@ -24,6 +24,7 @@ public class GameUIManager : MonoBehaviour {
   public CardReceptor rhandRec;
   public CardReceptor llegRec;
   public CardReceptor rlegRec;
+	List<CardReceptor> mpBody=new List<CardReceptor>();
   public Text energy;
   SingleGame.Conditional player1;
   bool initDone=false;
@@ -38,6 +39,7 @@ public class GameUIManager : MonoBehaviour {
 	}
 	bool collectTime=false;
   float timeSinceLastUpdate=0;
+
   IEnumerator timeProgression()
   {
     while(true)
@@ -66,6 +68,14 @@ public class GameUIManager : MonoBehaviour {
     {
       yield return null;
     }
+		headRec.validTag="SLOT_HEAD";
+		torsoRec.validTag="SLOT_TORSO";
+		lhandRec.validTag="SLOT_LHAND";
+		rhandRec.validTag="SLOT_RHAND";
+		llegRec.validTag="SLOT_LLEG";
+		rlegRec.validTag="SLOT_RLEG";
+		mpBody.Add(headRec);mpBody.Add(torsoRec);mpBody.Add(lhandRec);mpBody.Add(rhandRec);
+		mpBody.Add(llegRec);mpBody.Add(rlegRec);
     headRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_HEAD");
     torsoRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_TORSO");
     lhandRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_LHAND");
@@ -140,6 +150,7 @@ public class GameUIManager : MonoBehaviour {
 		RectTransform rt=deck.RootCanvasTransform();
 		GameObject crd=Instantiate(card) as GameObject;
 		CardControl crc=crd.GetComponent<CardControl>();
+		crc.playerID=player1["playerID"] as string;
 		crc.cardData=_game.hookData;
 		crc.slotPos=0;
 		RectTransform crt=crd.GetComponent<RectTransform>();
@@ -148,10 +159,11 @@ public class GameUIManager : MonoBehaviour {
 		Rect rr = deck.RootCanvasRect ();
 		Vector4 tovec = rt.getAnchorsFromCanvasRect (rr);
 		//crt.SetInternalAnchors (new Vector4 (0, 0, 1, 1));
-		crt.anchorMin=new Vector2(tovec.x,tovec.y);
+		crt.assignRectAnchors(tovec);
+		/*crt.anchorMin=new Vector2(tovec.x,tovec.y);
 		crt.anchorMax=new Vector2(tovec.z,tovec.w);
 		crt.offsetMax=Vector2.zero;
-		crt.offsetMin=Vector2.zero;
+		crt.offsetMin=Vector2.zero;*/
 		SpawnCardAnim can=crd.GetComponent<SpawnCardAnim>();
 		can.middle=flipper;
 		handCards.Add(crc);
@@ -176,6 +188,62 @@ public class GameUIManager : MonoBehaviour {
  IEnumerator trans()
 	{
 		Debug.Log("trans");
+		SingleGame.Conditional castCard=_game.hookData["castSource"] as SingleGame.Conditional;
+		//SingleGame.Conditional targetCard=_game.hookData["castTarget"] as SingleGame.Conditional;
+	    if(castCard!=null)
+		{
+			int handnum=-1;
+			for(int i=0;i<handCards.Count;i++)
+			{
+				if(castCard==handCards[i].cardData){handnum=i;break;}
+			}
+			if(handnum==-1)
+			{
+				Debug.Log("Some error");
+			}
+			else
+			{
+				CardControl toMove=handCards[handnum];
+				RectTransform original=toMove.GetComponent<RectTransform>();
+				RectTransform canv=original.RootCanvasTransform();
+				Vector4 posvec=canv.getAnchorsFromCanvasRect(original.RootCanvasRect());
+				handCards.Remove(toMove);
+				List<IAnimInterface> anims=new List<IAnimInterface>();
+				for(int j=0;j<mpBody.Count;j++)
+				{
+					CardReceptor cr=mpBody[j];
+					if(castCard.hasTag(cr.validTag))
+					{
+						GameObject crd=Instantiate(card) as GameObject;
+						CardControl crc=crd.GetComponent<CardControl>();
+						crc.cardData=castCard;
+						crc.playerID=castCard["_Owner.playerID"] as string;
+						SpawnCardAnim todel=crd.GetComponent<SpawnCardAnim>();
+						Destroy(todel as Component);
+						CardFlip flp=crd.GetComponent<CardFlip>();
+						flp.Flip();
+						RectTransform ctr=crd.GetComponent<RectTransform>();
+						ctr.SetParent(canv,false);
+						ctr.SetAsLastSibling();
+						ctr.assignRectAnchors(posvec);
+						RectTransform targpos=cr.gameObject.GetComponent<RectTransform>();
+						IAnimInterface an=RectTransfer.Apply(crd,targpos,shiftdur);
+						an.Run();
+						anims.Add(an);
+					}
+				}
+				Destroy(toMove.gameObject);
+				
+				bool done=false;
+				while(!done)
+				{
+					done=true;
+					foreach(IAnimInterface anim in anims) done=(done & anim.isDone);
+					yield return null;
+				}
+
+			}
+		}
 		hooks.Remove("transformation");
 		SingleGame.GameManager.endHook();
 		yield break;
@@ -235,7 +303,7 @@ public class GameUIManager : MonoBehaviour {
     }
     if(player1!=null&&energy!=null)
     {
-      energy.text=player1["Energy"].ToString();
+      energy.text=Mathf.FloorToInt((float)player1["Energy"]).ToString();
     }
 	}
 }

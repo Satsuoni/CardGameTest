@@ -84,10 +84,17 @@ public static class rtExt
 		Vector2 dmax = rct.max - crct.min;
 		return new Vector4(dmin.x/crct.width,dmin.y/crct.height,dmax.x/crct.width,dmax.y/crct.height);
 	}
+	public static void assignRectAnchors(this RectTransform go,Vector4 rct)
+	{
+		go.anchorMin=new Vector2(rct.x,rct.y);
+		go.anchorMax=new Vector2(rct.z,rct.w);
+		go.offsetMax=Vector2.zero;
+		go.offsetMin=Vector2.zero;
+	}
 }
-public class CardControl : MonoBehaviour, UnityEngine.EventSystems.IBeginDragHandler,  UnityEngine.EventSystems.IDragHandler,UnityEngine.EventSystems.IEndDragHandler, UnityEngine.ICanvasRaycastFilter
+public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginDragHandler,  UnityEngine.EventSystems.IDragHandler,UnityEngine.EventSystems.IEndDragHandler, UnityEngine.ICanvasRaycastFilter
 {
-
+	public string playerID{get;set;}
 	public int slotPos {get;set;}
 
 	public UnityEngine.UI.RawImage cardImg;
@@ -184,9 +191,9 @@ public class CardControl : MonoBehaviour, UnityEngine.EventSystems.IBeginDragHan
 
 //	CardFlip flip;
 	// Use this for initialization
-	public SingleGame.Conditional cardData;
+	//public SingleGame.Conditional cardData;
 
-	void Start () {
+	public override void Start () {
 		//flip=gameObject.GetComponent<CardFlip>();
 		rtransform=gameObject.GetComponent<RectTransform>();
 				canv=rtransform.RootCanvasTransform();
@@ -201,10 +208,13 @@ public class CardControl : MonoBehaviour, UnityEngine.EventSystems.IBeginDragHan
 		game=cardData[SingleGame._rootl] as SingleGame.Conditional;
 
 	}
-	
+	public override  void Highlight(bool light){
+		glow.gameObject.SetActive(light);
+	}
 	// Update is called once per frame
-	void Update () {
-		glow.gameObject.SetActive(cardData.hasTag("ACTIVE"));
+	public override void Update () {
+		base.Update();
+		//glow.gameObject.SetActive(cardData.hasTag("ACTIVE"));
 		if(didFinishDragging)
 		{
 			if(!dropSuccess)

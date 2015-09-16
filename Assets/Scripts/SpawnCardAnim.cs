@@ -16,11 +16,13 @@ public class SpawnCardAnim : MonoBehaviour {
 		me.SetAsLastSibling();
 		IAnimInterface a1=RectTransfer.Apply(gameObject,middle,flydur);
 		a1.Run();
-		while(!a1.isDone) yield return null;
+		IAnimInterface a2=gameObject.GetComponent<CardFlip>();
+		a2.Run();
+		while(!a1.isDone||!a2.isDone) yield return null;
 		Destroy(a1 as Component);
-		a1=gameObject.GetComponent<CardFlip>();
-		a1.Run();
-		while(!a1.isDone) yield return null;
+		//a1=gameObject.GetComponent<CardFlip>();
+		//a1.Run();
+		//while(!a1.isDone) yield return null;
 		//Destroy(a1 as Component);
 		a1=RectTransfer.Apply(gameObject,hand,flydur);
 		a1.Run();

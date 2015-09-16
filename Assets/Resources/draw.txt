@@ -61,6 +61,7 @@ function _commands
 foreach _Game._Players
 {
 accumulate condition { and { notCastableTransform condition { tag ACTIVE } } } _target.HAND _todeacc
+accumulate condition { and { notCastableTransform condition { tag ACTIVE } } } _target.BODY _todeacc
 foreach _todeacc
  {
  tag_remove _target ACTIVE
@@ -333,6 +334,7 @@ function _commands
 
 function transform_cast
 {
+ 
  accumulate condition { any <<.castSource condition { tag <=<<.slot } } castTarget._Owner.BODY _remFromBody
  foreach _remFromBody
  {
@@ -344,7 +346,7 @@ function transform_cast
  remove castSource._Owner.HAND castSource
  tag_set castSource BODY
  push castSource._Owner.BODY castSource
- hook transformation _target
+ hook transformation _
 }
 
 conditional castTransformToBodyRule
@@ -392,11 +394,27 @@ function _commands
    push cleanEvents _target
     }
  }
+
 foreach cleanEvents
 {
 remove _Game.Events _target
 }
 clear cleanEvents
+foreach _Game._Players
+{
+
+foreach _target.BODY
+ {
+  
+ if _target hasMaintenance
+  {
+  set mcost <=_target._Owner.timeflow
+  mul mcost <=_Game.deltaTime
+  mul mcost <=_target._maintenanceCost
+  sub _target._Owner.Energy <=mcost
+  }
+ }
+}
  tag_remove _Game UPDATE_TIME
  }
 }

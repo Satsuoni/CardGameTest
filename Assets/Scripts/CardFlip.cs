@@ -31,6 +31,27 @@ public class CardFlip : MonoBehaviour, IAnimInterface {
 		_isDone=false;
 		StartCoroutine(flipCoRoutine());
 	}
+	public void Flip()
+	{
+		GameObject flipFrom;
+		GameObject flipTo;
+		if(back.activeSelf)
+		{
+			flipFrom=back;
+			flipTo=front;
+		}
+		else
+		{
+			flipFrom=front;
+			flipTo=back;
+		}
+		flipFrom.SetActive(false);
+		flipTo.SetActive(true);
+		Quaternion rot=Quaternion.identity;
+		rot.eulerAngles=new Vector3(0,0,0);
+		flipFrom.transform.localRotation=rot;
+		flipTo.transform.localRotation=rot;
+	}
 	IEnumerator flipCoRoutine()
 	{
 		_isDone=false;

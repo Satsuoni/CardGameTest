@@ -5,6 +5,7 @@ using System.Collections;
 abstract public class ConditionalUIEntity: MonoBehaviour
 {
 	protected SingleGame.Conditional data=null;
+	public SingleGame.Conditional cardData {get{return data;} set {data=value;}}
 	public void refDataFromString(string dat)
 	{
 		if(SingleGame.GameManager.self!=null)
@@ -97,6 +98,7 @@ abstract public class ConditionalUIEntity: MonoBehaviour
 public class CardReceptor : ConditionalUIEntity, IDropHandler {
 
   public RectTransform glow;
+	public string validTag;
 	#region IDropHandler implementation
 	void IDropHandler.OnDrop (PointerEventData eventData)
 	{
