@@ -27,6 +27,7 @@ public class GameUIManager : MonoBehaviour {
   public Text energy;
   SingleGame.Conditional player1;
   bool initDone=false;
+	public float shiftdur=0.2f;
 	//Dictionary<string
 	// Use this for initialization
 	void Start () {
@@ -78,8 +79,12 @@ public class GameUIManager : MonoBehaviour {
      initDone=true;
 		collectTime=true;
   }
+	List<CardControl> handCards=new List<CardControl>();
 	IEnumerator draw()
 	{
+		/*IAnimInterface a1=RectTransfer.Apply(gameObject,middle,flydur);
+		a1.Run();
+		while(!a1.isDone) yield return null;*/
 //		Debug.Log(_game.hookData["_Owner"]);
 		if(_game.hookData["_Owner"]!=_game._GameData["Player1"])
 		{
@@ -88,10 +93,55 @@ public class GameUIManager : MonoBehaviour {
 			yield break;
 		}
 		collectTime=false;
+		IList handlst=(_game._GameData["Player1"] as SingleGame.Conditional)["HAND"] as IList;
+		List<CardControl> trem=new List<CardControl>();
+		List<IAnimInterface> anims=new List<IAnimInterface>();
+		for(int handc=0;handc<handCards.Count;handc++)
+		{
+			int newp=-1;
+			for(int pos=0;pos<handlst.Count;pos++)
+			{
+				if(handlst[pos]==handCards[handc].cardData)
+				{
+					newp=pos;
+					break;
+				}
+			}
+			if(newp==-1)
+			{
+				trem.Add(handCards[handc]);
+			}
+			else
+			{
+				if(newp!=handCards[handc].slotPos)
+				{
+					int dif=Mathf.Abs(newp-handCards[handc].slotPos);
+					anims.Add (RectTransfer.Apply(handCards[handc].gameObject,handSlots[newp],shiftdur*dif));
+					handCards[handc].slotPos=newp;
+				}
+			}
+		}
+		foreach(CardControl td in trem)
+		{
+			handCards.Remove(td);
+		}
+		trem=null;
+      foreach(IAnimInterface anim in anims)
+		{
+			anim.Run();
+		}
+		bool done=false;
+		while(!done)
+		{
+			done=true;
+			foreach(IAnimInterface anim in anims) done=(done & anim.isDone);
+        yield return null;
+		}
 		RectTransform rt=deck.RootCanvasTransform();
 		GameObject crd=Instantiate(card) as GameObject;
 		CardControl crc=crd.GetComponent<CardControl>();
 		crc.cardData=_game.hookData;
+		crc.slotPos=0;
 		RectTransform crt=crd.GetComponent<RectTransform>();
 		crt.SetParent(rt,false);
 		crt.SetAsLastSibling();
@@ -104,10 +154,8 @@ public class GameUIManager : MonoBehaviour {
 		crt.offsetMin=Vector2.zero;
 		SpawnCardAnim can=crd.GetComponent<SpawnCardAnim>();
 		can.middle=flipper;
-		IList plst=_game._GameData["_Players"] as IList;
-		IList lst=(plst[0] as SingleGame.Conditional)["HAND"] as IList;
-
-		int cnt=lst.Count-1;
+		handCards.Add(crc);
+		int cnt=0;
 		if (cnt>=7) cnt=6;
 		can.hand=handSlots[cnt];
 		while(!can.done) yield return null;
