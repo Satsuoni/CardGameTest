@@ -30,3 +30,24 @@ remove |-.TARGETED._Owner.BODY _target
 
 
 condition { strcomp |-.SELECTED._Owner.playerID <=|-.TARGETED._Owner.playerID }
+
+
+condition trythis
+{
+and
+{
+condition { command_type _currentCommand sub } 
+condition { isset mcost } 
+condition { strcomp _currentCommand.arg0 _target._Owner.Energy } 
+}
+}
+
+conditional tryrule
+{
+tag EXECUTE_PREFIX
+condition _condition trythis
+function _commands
+ {
+ return set mcost -1
+ }
+}

@@ -84,7 +84,7 @@ abstract public class ConditionalUIEntity: MonoBehaviour
 	}
 	public virtual void Update ()
 	{
-		if(data!=null&&(data.hasTag("ACTIVE")||data.hasTag("HIGHLIGHTED")||data.hasTag("TARGETABLE")))
+		if(data!=null&&(data.hasTag("main_ACTIVE")||data.hasTag("HIGHLIGHTED")||data.hasTag("TARGETABLE")))
 		   {
 			Highlight(true);
 		   }
@@ -108,11 +108,11 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler {
 			CardControl card=eventData.pointerDrag.GetComponent<CardControl>();
 			if(card!=null)
 			{
-        if(data!=null&&data.hasTag("TARGETABLE"))
+				if(data!=null&&data.hasTag(data["|-.Player1.targetTag"] as string))
         {
           lock(SingleGame.gameLock)
           {
-            SingleGame.GameManager.self._GameData["TARGETED"]=data;//card.cardData;
+            SingleGame.GameManager.self._GameData["Player1.TARGETED"]=data;//card.cardData;
 
           }
 				//Debug.Log(card);

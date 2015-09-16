@@ -60,17 +60,19 @@ function _commands
 {
 foreach _Game._Players
 {
-accumulate condition { and { notActivatable condition { tag ACTIVE } } } _target.HAND _todeacc
-accumulate condition { and { notActivatable condition { tag ACTIVE } } } _target.BODY _todeacc
+set _tmp <=_target
+accumulate condition { and { notActivatable condition { tag <=<<._target.activeTag } } } _target.HAND _todeacc
+accumulate condition { and { notActivatable condition { tag <=<<._target.activeTag } } } _target.BODY _todeacc
 foreach _todeacc
  {
- tag_remove _target ACTIVE
+ tag_remove _target <=_tmp.activeTag
  }
 
-accumulate condition { and { Activatable condition { inverse tag ACTIVE } } } _target.HAND _toActivate
+accumulate condition { and { Activatable condition { inverse tag <=<<._target.activeTag } } } _target.HAND _toActivate
 foreach _toActivate
  {
- tag_set _target ACTIVE
+ tag_set _target <=_tmp.activeTag
+
  }
 }
 
@@ -217,30 +219,8 @@ bodyTransform } }
     }
 }
 
-condition mpActiveCard
-{
-and {
-   condition { tag MAIN_PLAYER }
-condition { or { activeAbility activeTransform } }
-    }
-}
 
-conditional choiceRule
-{
-tag MAIN_RULE
-tag INVIOLATE
-condition _condition mainPlayerCanPlay
-function _commands
-  {
-  target mpActiveCard _Game.CARDS
-  clear _mpCards
-  foreach _targetList
-  {
 
-  }
-  choice chooseCard _playableCards _Game.mainPlayer.chosenCard
-  }
-}
 
 conditional fillEntitiesRule
 {
@@ -284,17 +264,24 @@ tag INVIOLATE
 condition _condition DidSelectCard  
 function _commands
   {
-if _Game.SELECTED condition { tag DESELECT } 
+accumulate condition { isset SELECTED } _Game._Players _sel
+foreach _sel
+{
+
+if _target.SELECTED condition { tag DESELECT } 
  {
-accumulate condition { tag TARGETABLE } _Game._Entities _detarget
- foreach _detarget
+ accumulate condition { tag <=<<._target.targetTag } _Game._Entities _detarget
+foreach _detarget
  {
- tag_remove _target TARGETABLE
+ tag_remove _target  <=_target.targetTag 
  }
  clear _detarget
-tag_remove _Game.SELECTED DESELECT
-clear _Game.SELECTED
- } 
+ tag_remove _target.SELECTED DESELECT
+clear  _target.SELECTED
+ }
+
+}
+clear _sel
   }
  
 }
@@ -306,29 +293,37 @@ tag INVIOLATE
 condition _condition DidSelectCard
 function _commands
   {
+accumulate condition { isset SELECTED } _Game._Players _sel
+ foreach _sel
+ {
+ hook test _target
 
- tag_set _Game.SELECTED SEL
- accumulate condition { and {condition { tag ACTIVE } condition { inverse tag SEL } } } _Game._Entities _deacc
+ set _tmp <=_target
+ set _SELECTED <=_target.SELECTED
+ tag_set _target.SELECTED SEL
+ accumulate condition { and {condition { tag <<._target.activeTag}  condition { inverse tag SEL } } }  _Game._Entities _deacc
  foreach _deacc
  {
- tag_remove _target ACTIVE
+ tag_remove _target <=_tmp.activeTag
  }
- tag_remove _Game.SELECTED SEL
+ tag_remove _target.SELECTED SEL
  clear _deacc
- accumulate condition { tag TARGETABLE } _Game._Entities _detarget
+ accumulate condition { tag <<._target.targetTag } _Game._Entities _detarget
  foreach _detarget
  {
  if _target condition { inverse or { isTargetOfSelected } }
-  { tag_remove _target TARGETABLE }
+  { tag_remove _target _tmp.targetTag }
  } 
  clear _detarget
  accumulate isTargetOfSelected _Game._Entities _sel
  foreach _sel
  {
- tag_set _target TARGETABLE
+ tag_set _target <=_tmp.targetTag
  }
    clear _sel
-
+   clear _tmp
+   clear _SELECTED
+  }
   }
 }
 
@@ -359,45 +354,30 @@ tag INVIOLATE
 condition _condition isTransformCastPrepared
 function _commands
   {
-  set castPlayer <=|-.SELECTED._Owner
-  sub castPlayer.Energy <=|-.SELECTED._castCost 
+  accumulate isTransformCaster  _Game._Players _casters
+  foreach _casters
+  {
+  set castPlayer <=_target.SELECTED._Owner
+  sub castPlayer.Energy <=_target.SELECTED._castCost 
   clear event 
   new event
-  set event._Owner <=|-.SELECTED._Owner
+  set event._Owner <=_target.SELECTED._Owner
   set event.Delay 0
-  set event.castSource <=|-.SELECTED
-  set event.castTarget <=|-.TARGETED
+  set event.castSource <=_target.SELECTED
+  set event.castTarget <=_target.TARGETED
   set event.func  <=|-.transform_cast
-  tag_remove |-.TARGETED FREE
-  tag_set |-.TARGETED BUSY
-  tag_set |-.SELECTED BUSY
+  tag_remove _target.TARGETED FREE
+  tag_set _target.TARGETED BUSY
+  tag_set _target.SELECTED BUSY
   insert event |-.Events Delay
-  tag_set |-.SELECTED DESELECT
-  clear |-.TARGETED
-  
+  tag_set _target.SELECTED DESELECT
+  clear _target.TARGETED
+   }
+ clear _casters
   }
 }
 
 
-condition trythis
-{
-and
-{
-condition { command_type _currentCommand sub } 
-condition { isset mcost } 
-condition { strcomp _currentCommand.arg0 _target._Owner.Energy } 
-}
-}
-
-conditional tryrule
-{
-tag EXECUTE_PREFIX
-condition _condition trythis
-function _commands
- {
- return set mcost -1
- }
-}
 
 conditional updateTimeRule
 {

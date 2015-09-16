@@ -192,12 +192,12 @@ Activatable
 
 condition DidSelectCard
 {
-isset |-.SELECTED
+any |-._Players condition { isset SELECTED }
 }
 
 condition DidTargetCard
 {
-isset |-.TARGETED
+any |-._Players condition { isset TARGETED }
 }
 
 condition isTargetOfSelected
@@ -207,12 +207,12 @@ or
 condition {
        and
          {
-         condition { any |-.SELECTED castableTransform }
+         condition { any <<._SELECTED castableTransform }
          condition { tag BODY }
          condition { tag FREE }
          condition { inverse tag TRANSFORM }
-         condition { any |-.SELECTED condition { tag <=<<.slot } }
-         condition { strcomp |-.SELECTED._Owner.playerID <=_Owner.playerID }
+         condition { any <<._SELECTED condition { tag <=<<.slot } }
+         condition { strcomp <<._SELECTED._Owner.playerID <=_Owner.playerID }
 
          }
        
@@ -220,11 +220,11 @@ condition {
 condition {
         and
          {
-         condition { any |-.SELECTED castableAbility }
+         condition { any <<._SELECTED castableAbility }
          condition { tag BODY }
          condition { tag FREE }
-         condition {  tag <=|-.SELECTED.sourceType }
-         condition { strcomp |-.SELECTED._Owner.playerID <=_Owner.playerID }
+         condition {  tag <=<<._SELECTED.sourceType }
+         condition { strcomp <<._SELECTED._Owner.playerID <=_Owner.playerID }
 
          }
 }
@@ -236,12 +236,21 @@ condition isTransformCastPrepared
  and
  {
   DidSelectCard
-  condition { any |-.SELECTED castableTransform }
-  DidTargetCard
- condition { strcomp |-.SELECTED._Owner.playerID <=|-.TARGETED._Owner.playerID }
-  
+  condition { any |-._Players condition {  and { condition { any SELECTED castableTransform } condition { isset TARGETED } }  } }
+ 
  } 
 
+}
+
+
+condition isTransformCaster
+{
+and 
+ {
+ condition { isset SELECTED }
+ condition { any SELECTED  castableTransform }
+ condition { isset TARGETED }
+ }
 }
 
 condition leDelayZero

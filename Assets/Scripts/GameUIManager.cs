@@ -273,6 +273,14 @@ public class GameUIManager : MonoBehaviour {
 			SingleGame.GameManager.endHook();
 			return;
 		}
+		if(name=="test")
+		{
+			Debug.Log("testlog");
+			Debug.Log(data.hasTag("main_ACTIVE"));
+			hooks.Remove("test");
+			SingleGame.GameManager.endHook();
+			return;
+		}
     if(name=="id")
     {
       Debug.Log("idlog");

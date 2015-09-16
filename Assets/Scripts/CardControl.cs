@@ -101,6 +101,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	public UnityEngine.UI.RawImage glow;
 	public UnityEngine.UI.Text text;
 	SingleGame.Conditional game;
+	SingleGame.Conditional player1;
 	RectTransform rtransform;
 	RectTransform canv;
 
@@ -126,11 +127,11 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	}
 	public void OnEndDrag (UnityEngine.EventSystems.PointerEventData eventData)
 	{
-		if(	game[sel]==cardData)
+		if(	player1[sel]==cardData)
     {
       cardData.setTag("DESELECT");
     }
-		if(cardData.hasTag("ACTIVE"))
+		if(cardData.hasTag("main_ACTIVE"))
 		{
 			isDragging=false;
 		}
@@ -153,7 +154,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	{
 		//Debug.Log(string.Format("Dragging {0}",gameObject));
 
-		if(cardData.hasTag("ACTIVE"))
+		if(cardData.hasTag("main_ACTIVE"))
 		{
 			//Debug.Log(string.Format("Pos {0}", eventData.position));
 			wasDragged=true;
@@ -175,7 +176,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	public void OnBeginDrag (UnityEngine.EventSystems.PointerEventData eventData)
 	{
 		//Debug.Log(string.Format("Drag {0}",gameObject));
-		if(cardData.hasTag("ACTIVE"))
+		if(cardData.hasTag("main_ACTIVE"))
 		{
 			isDragging=true;
 			///allow dragging
@@ -183,7 +184,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 			rtransform.localScale=new Vector3(1.3f,1.3f,1.3f);
 			oPos=rtransform.anchoredPosition;
 			RectTransformUtility.ScreenPointToLocalPointInRectangle(canv, eventData.position,eventData.pressEventCamera,out ePos);
-			game[sel]=cardData;
+			player1[sel]=cardData;
 		}
 	}
 	#endregion
@@ -194,7 +195,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	//public SingleGame.Conditional cardData;
 
 	public override void Start () {
-		//flip=gameObject.GetComponent<CardFlip>();
+
 		rtransform=gameObject.GetComponent<RectTransform>();
 				canv=rtransform.RootCanvasTransform();
 		text.text=cardData[SingleGame._cardText] as string;
@@ -206,7 +207,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 				cardImg.texture=txt;
 		}
 		game=cardData[SingleGame._rootl] as SingleGame.Conditional;
-
+		player1=game["Player1"] as SingleGame.Conditional;
 	}
 	public override  void Highlight(bool light){
 		glow.gameObject.SetActive(light);
@@ -214,7 +215,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	// Update is called once per frame
 	public override void Update () {
 		base.Update();
-		//glow.gameObject.SetActive(cardData.hasTag("ACTIVE"));
+		//glow.gameObject.SetActive(cardData.hasTag("main_ACTIVE"));
 		if(didFinishDragging)
 		{
 			if(!dropSuccess)

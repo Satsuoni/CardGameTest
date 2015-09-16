@@ -3,6 +3,9 @@ conditional Player1 Player
 {
 string _name MainPlayer
 
+string activeTag main_ACTIVE
+string targetTag main_TARGETABLE
+string aimTag main_AIMABLE
 
 list DECK
 {
@@ -23,6 +26,9 @@ conditional Player2 Player
 {
 string _name Dummy
 
+string activeTag p2_ACTIVE
+string targetTag p2_TARGETABLE
+string aimTag p2_AIMABLE
 
 list DECK
 {

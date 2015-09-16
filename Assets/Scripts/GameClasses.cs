@@ -3017,19 +3017,19 @@ public class SingleGame
       }break;
       case Commands.TAG_SET:
 				{
-					(stack[this["arg0"] as string] as Conditional).setTag(this["arg1"] as string);}
+					(stack[this["arg0"] as string] as Conditional).setTag(deRef(this["arg1"],stack) as string);}
 				break;
 			case Commands.TAG_REMOVE:
 			{
-				(stack[this["arg0"] as string] as Conditional).removeTag(this["arg1"] as string);}
+					(stack[this["arg0"] as string] as Conditional).removeTag(deRef(this["arg1"],stack) as string);}
 				break;
       case Commands.TAG_SWITCH:
 				{
         Conditional ct=(stack[this["arg0"]as string] as Conditional);
         if(ct.hasTag(this["arg1"] as string))
 					{
-          ct.removeTag(this["arg1"] as string);
-          ct.setTag(this["arg2"] as string);
+						ct.removeTag(deRef(this["arg1"],stack) as string);
+						ct.setTag(deRef(this["arg2"],stack) as string);
 					}
 				}
 				break;
@@ -3112,6 +3112,7 @@ public class SingleGame
 			case Commands.CONTINUE:
 				{
 					stack.setTag(TAG_CONTINUE);
+
 				}
 				break;
 			case Commands.NEW:
@@ -3212,11 +3213,12 @@ public class SingleGame
         if(vr==null||appl==null)
         {
           #if THING
-          Debug.Log("Invalid variable or condition in the if statement");
+						Debug.Log(string.Format("Invalid variable or condition in the if statement {0} {1} ",this["arg0"],this["arg1"] ));
           #endif
         }
         else
         {
+			//Debug.Log(TAG_CONTINUE);
           if(appl.isFulfilled(vr,stack))
            executeList(this["arg2"], stack);
         }
@@ -3525,7 +3527,7 @@ public class SingleGame
                    
 										ret.__pureExecute(stack);
                   }
-									if(stack.hasTag(TAG_ABORT))
+									if(stack.hasTag(TAG_ABORT)||stack.hasTag(TAG_CONTINUE))
 										return;
 								}
 							}
