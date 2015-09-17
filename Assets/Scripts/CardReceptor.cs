@@ -84,7 +84,7 @@ abstract public class ConditionalUIEntity: MonoBehaviour
 	}
 	public virtual void Update ()
 	{
-		if(data!=null&&(data.hasTag("main_ACTIVE")||data.hasTag("HIGHLIGHTED")||data.hasTag("TARGETABLE")))
+		if(data!=null&&(data.hasTag("main_ACTIVE")||data.hasTag("HIGHLIGHTED")||data.hasTag("main_TARGETABLE")))
 		   {
 			Highlight(true);
 		   }

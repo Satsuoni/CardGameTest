@@ -267,13 +267,13 @@ function _commands
 accumulate condition { isset SELECTED } _Game._Players _sel
 foreach _sel
 {
-
+ set _tmp <=_target
 if _target.SELECTED condition { tag DESELECT } 
  {
  accumulate condition { tag <=<<._target.targetTag } _Game._Entities _detarget
 foreach _detarget
  {
- tag_remove _target  <=_target.targetTag 
+ tag_remove _target  <=_tmp.targetTag 
  }
  clear _detarget
  tag_remove _target.SELECTED DESELECT
@@ -296,26 +296,27 @@ function _commands
 accumulate condition { isset SELECTED } _Game._Players _sel
  foreach _sel
  {
- hook test _target
-
  set _tmp <=_target
  set _SELECTED <=_target.SELECTED
  tag_set _target.SELECTED SEL
- accumulate condition { and {condition { tag <<._target.activeTag}  condition { inverse tag SEL } } }  _Game._Entities _deacc
+ accumulate condition { and { condition { tag <=<<._target.activeTag }  condition { inverse tag SEL } } }  _Game._Entities _deacc
+  
  foreach _deacc
  {
  tag_remove _target <=_tmp.activeTag
  }
+
  tag_remove _target.SELECTED SEL
  clear _deacc
- accumulate condition { tag <<._target.targetTag } _Game._Entities _detarget
+ accumulate condition { tag <=<<._target.targetTag } _Game._Entities _detarget
  foreach _detarget
  {
  if _target condition { inverse or { isTargetOfSelected } }
-  { tag_remove _target _tmp.targetTag }
+  { tag_remove _target <=_tmp.targetTag }
  } 
  clear _detarget
  accumulate isTargetOfSelected _Game._Entities _sel
+
  foreach _sel
  {
  tag_set _target <=_tmp.targetTag

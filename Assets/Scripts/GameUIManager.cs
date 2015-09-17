@@ -276,7 +276,8 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="test")
 		{
 			Debug.Log("testlog");
-			Debug.Log(data.hasTag("main_ACTIVE"));
+			IList dl=data["_sel"] as IList;
+			Debug.Log(dl.Count);
 			hooks.Remove("test");
 			SingleGame.GameManager.endHook();
 			return;
