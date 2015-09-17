@@ -242,6 +242,11 @@ public class GameUIManager : MonoBehaviour {
 					foreach(IAnimInterface anim in anims) done=(done & anim.isDone);
 					yield return null;
 				}
+				foreach(IAnimInterface anim in anims) 
+				{
+					RectTransfer rt=anim as RectTransfer;
+					Destroy(rt.gameObject);
+				}
 
 			}
 		}

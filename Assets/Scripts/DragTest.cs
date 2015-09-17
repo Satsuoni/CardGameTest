@@ -2,12 +2,32 @@
 using UnityEngine.EventSystems;
 using System.Collections;
 
-public class DragTest : MonoBehaviour, IBeginDragHandler, IPointerEnterHandler, IPointerDownHandler, IDragHandler {
+public class DragTest : MonoBehaviour, IBeginDragHandler, IPointerEnterHandler, IPointerDownHandler, IDragHandler, IEndDragHandler {
+	public GameObject arr;
+	#region IEndDragHandler implementation
+
+	public void OnEndDrag (PointerEventData eventData)
+	{
+		if(pnt!=null)
+		{
+		Destroy(pnt.gameObject);
+		pnt=null;
+		}
+	}
+
+	#endregion
+
 	#region IDragHandler implementation
 
+	ArrowPointer pnt;
+	RectTransform cnv;
 	public void OnDrag (PointerEventData eventData)
 	{
-		Debug.Log("Drugging right along");
+		//Debug.Log("Drugging right along");
+		Vector2 otherpos;
+		RectTransformUtility.ScreenPointToLocalPointInRectangle(cnv, eventData.position,eventData.pressEventCamera,out otherpos);
+		(pnt.gameObject.transform as RectTransform).SetAsLastSibling();
+		pnt.drawArrow(initpos,otherpos);
 	}
 
 	#endregion
@@ -30,10 +50,21 @@ public class DragTest : MonoBehaviour, IBeginDragHandler, IPointerEnterHandler, 
 
 	#endregion
 
+	Vector2 initpos;
+
 	#region IBeginDragHandler implementation
 	public void OnBeginDrag (PointerEventData eventData)
 	{
-		Debug.Log("Dragging right along");
+		GameObject go=Instantiate(arr) as GameObject;
+		pnt=go.GetComponent<ArrowPointer>();
+		RectTransform rt=go.GetComponent<RectTransform>();
+		RectTransform self=transform as RectTransform;
+		rt.SetParent(self.RootCanvasTransform(),false);
+		rt.SetAsLastSibling();
+
+		cnv=rt.RootCanvasTransform();
+		RectTransformUtility.ScreenPointToLocalPointInRectangle(cnv, eventData.position,eventData.pressEventCamera,out initpos);
+
 	}
 	#endregion
 

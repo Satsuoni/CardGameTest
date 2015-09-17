@@ -104,7 +104,7 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler {
 	{
 		if(eventData.pointerDrag!=null)
 		{
-			
+
 			CardControl card=eventData.pointerDrag.GetComponent<CardControl>();
 			if(card!=null)
 			{
@@ -123,7 +123,13 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler {
 				cardrt.offsetMax=Vector2.zero;
 				cardrt.offsetMin=Vector2.zero;
 				cardrt.localScale=new Vector3(1,1,1);*/
-				card.registerDropSuccess(false);
+				if(!card.cardData.hasTag("ABILITY"))
+				 card.registerDropSuccess(false);
+					else
+					{
+						Debug.Log("ssss");
+						card.registerDropSuccess(true);
+					}
         }
         else
          card.registerDropSuccess(false);
@@ -153,10 +159,28 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler {
       }
     }
   }
-	
+	UnityEngine.UI.RawImage img=null;
 	// Update is called once per frame
 	public override void Update () {
 		base.Update();
-	
+	 if(data!=null&&data.hasTag("CARD"))
+		{//render a card on this thing...
+			if(img==null)
+			{
+				GameObject go=new GameObject("img");
+				go.AddComponent(typeof(UnityEngine.UI.RawImage));
+				img=go.GetComponent<UnityEngine.UI.RawImage>();
+				RectTransform tt=go.GetComponent<RectTransform>();
+				tt.SetParent(transform,false);
+				tt.assignRectAnchors(new Vector4(0,0.5f,1,1f));
+				string imgname=cardData["_cardImage"] as string;
+				if(!string.IsNullOrEmpty(imgname))
+				{
+					Texture2D txt=Resources.Load(imgname) as Texture2D;
+					if(txt!=null)
+						img.texture=txt;
+				}
+			}
+		}
 	}
 }

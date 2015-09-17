@@ -12,7 +12,7 @@ conditional Ability Card
 tag ABILITY
 float _castCost 0
 string sourceType ATTACK_EDGE
-float delay 0.2
+float delay 4
 function _effects { }
 condition _targetCond { and { condition { tag CARD } condition { tag BODY }  } }
 condition _castCond { less _cost _Owner.Energy }
