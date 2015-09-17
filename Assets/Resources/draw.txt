@@ -278,6 +278,7 @@ foreach _detarget
  clear _detarget
  tag_remove _target.SELECTED DESELECT
 clear  _target.SELECTED
+clear  _target.TARGETED
  }
 
 }
@@ -286,11 +287,41 @@ clear _sel
  
 }
 
+conditional detargetRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition DidSelectCard  
+function _commands
+  {
+accumulate condition { isset TARGETED } _Game._Players _sel
+foreach _sel
+{
+ set _tmp <=_target
+if _target.TARGETED condition { tag DETARGET } 
+ {
+ accumulate condition { tag <=<<._target.aimTag } _Game._Entities _deaim
+foreach _deaim
+ {
+ tag_remove _target  <=_tmp.aimTag 
+ }
+ clear _deaim
+ tag_remove _target.TARGETED DETARGET
+clear  _target.TARGETED
+ }
+
+}
+clear _sel
+  }
+ 
+}
+
+
 conditional highlightTargetsOfSelectedRule
 {
 tag MAIN_RULE
 tag INVIOLATE
-condition _condition DidSelectCard
+condition _condition DidSelectCardWithoutTarget
 function _commands
   {
 accumulate condition { isset SELECTED } _Game._Players _sel
@@ -326,6 +357,56 @@ accumulate condition { isset SELECTED } _Game._Players _sel
    clear _SELECTED
   }
   }
+}
+
+conditional activateAbilityEmitterRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition anyEmmitterTargeted
+function _commands
+{
+accumulate emitterTargeted _Game._Players _sel
+foreach _sel
+ {
+ set _tmp <=_target
+ 
+ accumulate condition { tag <=<<._target.targetTag } _Game._Entities _detarget
+ foreach _detarget
+ {
+ tag_remove _target  <=_tmp.targetTag 
+ }
+ tag_set _target.TARGETED <=_target.activeTag 
+ if _target condition { inverse tag MAIN_PLAYER }
+ { tag_set _target EMITTER_HIGHLIGHTED }
+ }
+}
+}
+
+conditional highlightAbilityTargets
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition anyEmitterHighlighted
+function _commands
+{
+accumulate emitterHighlighted _Game._Players _sel
+foreach _sel
+ {
+ set _tmp <=_target
+ if _target.SELECTED castableAbility
+ {
+
+  set _SELECTED <=_target.SELECTED
+  accumulate condition { self <<._SELECTED._targetCond } _Game._Entities _aim
+  
+  foreach _aim
+   {
+   tag_set _target <=_tmp.aimTag
+   }
+ }
+}
+}
 }
 
 function transform_cast

@@ -17,9 +17,11 @@ dismissRule
 activateRule
 deselectRule
 highlightTargetsOfSelectedRule
+highlightAbilityTargets
 castTransformToBodyRule
+activateAbilityEmitterRule
 updateTimeRule
-
+detargetRule
 }
 
 list _Entities

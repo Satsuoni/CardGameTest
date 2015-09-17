@@ -44,6 +44,7 @@ public class ArrowPointer : MonoBehaviour {
 	public void drawArrow(Vector2 pt0,Vector2 pt1) //in canvas coords?
 	{
 		if(trans==null) Init ();
+//		Debug.Log(pt0);	Debug.Log(pt1);
 		float distance= Vector2.Distance(pt0,pt1);
 		if(distance<0.01f) return;
 		float bodydist=distance-taillen-headlen;

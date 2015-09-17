@@ -2,7 +2,7 @@
 conditional Player1 Player
 {
 string _name MainPlayer
-
+tag MAIN_PLAYER
 string activeTag main_ACTIVE
 string targetTag main_TARGETABLE
 string aimTag main_AIMABLE

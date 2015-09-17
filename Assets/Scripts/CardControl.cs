@@ -91,6 +91,14 @@ public static class rtExt
 		go.offsetMax=Vector2.zero;
 		go.offsetMin=Vector2.zero;
 	}
+	public static Vector2 getPivotInCanvas(this RectTransform go)
+	{
+		Rect crct = go.RootCanvasRect ();
+	
+		Vector2 ret=new Vector2(crct.max.x*go.pivot.x+(1-go.pivot.x)*crct.min.x,crct.max.y*go.pivot.y+(1-go.pivot.y)*crct.min.y);
+		return ret;
+	}
+
 }
 public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginDragHandler,  UnityEngine.EventSystems.IDragHandler,UnityEngine.EventSystems.IEndDragHandler, UnityEngine.ICanvasRaycastFilter
 {
@@ -106,7 +114,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	RectTransform canv;
 
 	const string sel="SELECTED";
-
+	const string tar="TARGETED";
 	#region ICanvasRaycastFilter implementation
 
 
@@ -127,7 +135,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	}
 	public void OnEndDrag (UnityEngine.EventSystems.PointerEventData eventData)
 	{
-		if(	player1[sel]==cardData)
+		if(player1[sel]==cardData&&player1[tar]==null)
     {
       cardData.setTag("DESELECT");
     }
@@ -173,6 +181,10 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	Vector2 ePos;
 	bool wasDragged=false;
 	bool isDragging=false;
+	public Vector2 getOPos()
+	{
+		return oPos;
+	}
 	public void OnBeginDrag (UnityEngine.EventSystems.PointerEventData eventData)
 	{
 		//Debug.Log(string.Format("Drag {0}",gameObject));
@@ -216,6 +228,12 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	public override void Update () {
 		base.Update();
 		//glow.gameObject.SetActive(cardData.hasTag("main_ACTIVE"));
+		if(player1[sel]==cardData&&player1[tar]==null&&!isDragging)
+			cardData.setTag("DESELECT");
+		if(player1[sel]==cardData&&player1[tar]!=null&&!isDragging)
+		{
+			cardData.removeTag(player1["activeTag"] as string);
+		}
 		if(didFinishDragging)
 		{
 			if(!dropSuccess)
@@ -225,5 +243,6 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 			}
 			didFinishDragging=false;
 		}
+
 	}
 }

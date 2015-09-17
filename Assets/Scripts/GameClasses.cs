@@ -3649,6 +3649,7 @@ public class SingleGame
       if(type==Type.SELF)
       {
         Condition var=cnd[variable] as Condition;
+				Debug.Log(variable+var.ToString());
 				if(var!=null)
         return var.isFulfilled(cnd,cnd[_upcond] as Conditional);
 				else

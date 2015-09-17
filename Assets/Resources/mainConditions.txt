@@ -149,7 +149,7 @@ hasSlots
 
 condition hasEmitter
 {
-any _Owner.BODY condition { tag <=<<.sourceType }
+any _Owner.BODY condition { and { condition { tag <=<<.sourceType } condition { tag  FREE } } }
 }
 
 condition castableAbility
@@ -195,10 +195,35 @@ condition DidSelectCard
 any |-._Players condition { isset SELECTED }
 }
 
+condition DidSelectCardWithoutTarget
+{
+any |-._Players condition { and { condition { isset SELECTED } condition { inverse isset TARGETED } } }
+}
+
 condition DidTargetCard
 {
 any |-._Players condition { isset TARGETED }
 }
+
+condition emitterTargeted
+{
+and { condition { isset SELECTED } condition { any SELECTED castableAbility } condition { isset TARGETED } } 
+}
+condition anyEmmitterTargeted
+{
+any |-._Players emitterTargeted
+}
+
+condition emitterHighlighted
+{
+and { emitterTargeted  condition { tag EMITTER_HIGHLIGHTED } } 
+}
+
+condition anyEmitterHighlighted
+{
+any |-._Players emitterHighlighted
+}
+
 
 condition isTargetOfSelected
 {

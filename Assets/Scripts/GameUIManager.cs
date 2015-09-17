@@ -24,6 +24,13 @@ public class GameUIManager : MonoBehaviour {
   public CardReceptor rhandRec;
   public CardReceptor llegRec;
   public CardReceptor rlegRec;
+
+	public CardReceptor opponent_headRec;
+	public CardReceptor opponent_torsoRec;
+	public CardReceptor opponent_lhandRec;
+	public CardReceptor opponent_rhandRec;
+	public CardReceptor opponent_llegRec;
+	public CardReceptor opponent_rlegRec;
 	List<CardReceptor> mpBody=new List<CardReceptor>();
   public Text energy;
   SingleGame.Conditional player1;
@@ -85,6 +92,17 @@ public class GameUIManager : MonoBehaviour {
    llegRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_LLEG");
 
    rlegRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_RLEG");
+
+
+		opponent_headRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_HEAD");
+		opponent_torsoRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_TORSO");
+		opponent_lhandRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_LHAND");
+	
+		opponent_rhandRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_RHAND");
+		
+		opponent_llegRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_LLEG");
+		
+		opponent_rlegRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_RLEG");
     player1=_game._GameData["Player1"] as SingleGame.Conditional;
      initDone=true;
 		collectTime=true;
@@ -281,8 +299,9 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="test")
 		{
 			Debug.Log("testlog");
-			IList dl=data["_sel"] as IList;
-			Debug.Log(dl.Count);
+			Debug.Log(data.hasTag(player1["activeTag"] as string));
+			//IList dl=data["_sel"] as IList;
+			//Debug.Log(dl.Count);
 			hooks.Remove("test");
 			SingleGame.GameManager.endHook();
 			return;

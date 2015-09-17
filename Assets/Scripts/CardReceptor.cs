@@ -84,7 +84,7 @@ abstract public class ConditionalUIEntity: MonoBehaviour
 	}
 	public virtual void Update ()
 	{
-		if(data!=null&&(data.hasTag("main_ACTIVE")||data.hasTag("HIGHLIGHTED")||data.hasTag("main_TARGETABLE")))
+		if(data!=null&&(data.hasTag("main_ACTIVE")||data.hasTag("HIGHLIGHTED")||data.hasTag("main_TARGETABLE")||data.hasTag("main_AIMABLE")))
 		   {
 			Highlight(true);
 		   }
@@ -95,8 +95,81 @@ abstract public class ConditionalUIEntity: MonoBehaviour
 	}
 }
 
-public class CardReceptor : ConditionalUIEntity, IDropHandler {
+public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,IDragHandler,IEndDragHandler {
 
+	SingleGame.Conditional _mpl=null;
+	SingleGame.Conditional player1
+	{
+		get{ if(_mpl==null) _mpl=cardData["|-.Player1"] as SingleGame.Conditional; return _mpl; }
+	}
+
+	ArrowPointer to;
+	ArrowPointer from;
+	#region IBeginDragHandler implementation
+	Vector2 frompoint;
+	public void OnBeginDrag (PointerEventData eventData)
+	{
+		if(!cardData.hasTag(player1["activeTag"] as string)) return;
+		GameObject go=Instantiate(arrow) as GameObject;
+		ArrowPointer pnt=go.GetComponent<ArrowPointer>();
+		RectTransform rt=go.GetComponent<RectTransform>();
+		RectTransform self=transform as RectTransform;
+		rt.SetParent(self.RootCanvasTransform(),false);
+		rt.SetAsLastSibling();
+		from=pnt;
+		frompoint=self.getPivotInCanvas();
+		player1.setTag("EMITTER_HIGHLIGHTED");
+	}
+
+	#endregion
+
+	#region IDragHandler implementation
+
+	public void OnDrag (PointerEventData eventData)
+	{
+		Vector2 otherpos;
+		RectTransform self=transform as RectTransform;
+		RectTransformUtility.ScreenPointToLocalPointInRectangle(self.RootCanvasTransform(), eventData.position,eventData.pressEventCamera,out otherpos);
+		if(from!=null)
+		{
+			from.drawArrow(frompoint,otherpos);
+		}
+	}
+
+	#endregion
+
+	#region IEndDragHandler implementation
+	bool waitingForDrop=false;
+	bool droppedOnTarget=false;
+	public void DropOccurred()
+	{
+		droppedOnTarget=true;
+	}
+	void IEndDragHandler.OnEndDrag (PointerEventData eventData)
+	{
+	 if(from!=null)
+		{
+			Destroy(from.gameObject);
+			from=null;
+		}
+		player1.removeTag("EMITTER_HIGHLIGHTED");
+		if(to!=null)
+		{
+			Destroy(to.gameObject);
+			to=null;
+		}
+
+		waitingForDrop=true;
+
+	}
+
+	#endregion
+
+	static GameObject _arrow=null;
+	static GameObject arrow
+	{
+		get { if(_arrow==null) _arrow=Resources.Load("arrowPrefab") as GameObject; return _arrow;}
+	}
   public RectTransform glow;
 	public string validTag;
 	#region IDropHandler implementation
@@ -128,7 +201,23 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler {
 					else
 					{
 						Debug.Log("ssss");
-						card.registerDropSuccess(true);
+						Vector2 ops= card.getOPos();
+						RectTransform ctp=card.gameObject.GetComponent<RectTransform>();
+						Vector2 sv=ctp.anchoredPosition;
+						ctp.anchoredPosition=ops;
+						ops=ctp.getPivotInCanvas();
+						ctp.anchoredPosition=sv;
+						Vector2 dest=(transform as RectTransform).getPivotInCanvas();
+						GameObject go=Instantiate(arrow) as GameObject;
+						ArrowPointer pnt=go.GetComponent<ArrowPointer>();
+						RectTransform rt=go.GetComponent<RectTransform>();
+						RectTransform self=transform as RectTransform;
+						rt.SetParent(self.RootCanvasTransform(),false);
+						rt.SetAsLastSibling();
+						Debug.Log(ops);
+						pnt.drawArrow(ops,dest);
+						to=pnt;
+						card.registerDropSuccess(false);
 					}
         }
         else
@@ -181,6 +270,16 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler {
 						img.texture=txt;
 				}
 			}
+		}
+		if(waitingForDrop)
+		{
+			if(!droppedOnTarget)
+			{
+				cardData.setTag("DETARGET");
+				//SingleGame.GameManager.self._GameData["Player1.TARGETED"]=null;
+			}
+		waitingForDrop=false;
+		 droppedOnTarget=false;
 		}
 	}
 }
