@@ -10,7 +10,7 @@ tag ARTIFICIAL
 tag ATTACK_BEAM
 tag ATTACK_EDGE
 float _castCost 10
-float _maintenanceCost 5
+float _maintenanceCost 1
 float _dismissCost 40
 float _durability 100
 
@@ -18,8 +18,9 @@ list _addedRules { }
 condition _executeCondition { true }
 list abilities {
  conditional ab1 Ability
-{ condition _targetCond { and { condition { tag CARD } condition { tag BODY } distance_melee  } }
-float _cost 4
+{ 
+ condition _targetCond { and { condition { strcomp <<._Owner.playerID <=_Owner.playerID }  condition { inverse tag CARD } condition { tag BODY } distance_melee  } }
+float _castCost 4
 function _effects { sub _target.Energy 25 }
 }
   }
@@ -48,8 +49,9 @@ list _addedRules { }
 condition _executeCondition { true }
 list abilities {
  conditional ab1 Ability
-{ condition _targetCond { and { condition { tag CARD } condition { tag BODY } distance_midrange  } }
-float _cost 2
+{
+ condition _targetCond { and {  condition { tag BODY } distance_midrange  } }
+float _castCost 2
 function _effects { sub _target.Energy 20 }
 }
   }
@@ -59,9 +61,9 @@ function _effects { sub _target.Energy 20 }
 }
 conditional SampleAbility Ability
 {
-float _castCost 20
+float _castCost 10
 string sourceType ATTACK_EDGE
-float delay 1
+float delay 5
 
 function _effects {
 sub Energy 50

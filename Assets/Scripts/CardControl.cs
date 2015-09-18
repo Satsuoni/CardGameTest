@@ -135,10 +135,12 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 	}
 	public void OnEndDrag (UnityEngine.EventSystems.PointerEventData eventData)
 	{
-		if(player1[sel]==cardData&&player1[tar]==null)
+
+		/*if(player1[sel]==cardData&&player1[tar]==null)
     {
       cardData.setTag("DESELECT");
-    }
+			Debug.Log("DESELECT");
+    }*/
 		if(cardData.hasTag("main_ACTIVE"))
 		{
 			isDragging=false;
@@ -229,7 +231,10 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 		base.Update();
 		//glow.gameObject.SetActive(cardData.hasTag("main_ACTIVE"));
 		if(player1[sel]==cardData&&player1[tar]==null&&!isDragging)
+		{
 			cardData.setTag("DESELECT");
+//			Debug.Log("DESELECT");
+		}
 		if(player1[sel]==cardData&&player1[tar]!=null&&!isDragging)
 		{
 			cardData.removeTag(player1["activeTag"] as string);

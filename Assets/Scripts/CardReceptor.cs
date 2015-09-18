@@ -118,12 +118,25 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 		rt.SetAsLastSibling();
 		from=pnt;
 		frompoint=self.getPivotInCanvas();
+		Debug.Log(player1["TARGETED"]);
+		if(player1["TARGETED"]==cardData)
+		{
+			Debug.Log("highlight");
 		player1.setTag("EMITTER_HIGHLIGHTED");
+		}
+		else
+		{
+			lock(SingleGame.gameLock)
+			{
+				SingleGame.GameManager.self._GameData["Player1.SELECTED"]=data;//card.cardData;
+				Debug.Log(player1["SELECTED"]);
+			}
+		}
 	}
-
-	#endregion
-
-	#region IDragHandler implementation
+  
+  #endregion
+  
+  #region IDragHandler implementation
 
 	public void OnDrag (PointerEventData eventData)
 	{
@@ -186,7 +199,7 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
           lock(SingleGame.gameLock)
           {
             SingleGame.GameManager.self._GameData["Player1.TARGETED"]=data;//card.cardData;
-
+						//Debug.Log(player1["TARGETED"]);
           }
 				//Debug.Log(card);
 				/*RectTransform cardrt=card.gameObject.GetComponent<RectTransform>();
@@ -231,7 +244,16 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 					player1["AIMED"]=cardData;
 					Debug.Log(rc);
 					rc.DropOccurred();
+					return;
 				}
+				if(rc!=null&&cardData.hasTag(player1["targetTag"] as string))
+				   {
+					player1["TARGETED"]=cardData;
+					Debug.Log(rc);
+					rc.DropOccurred();
+               return;
+				}
+
 			}
 		}
 
@@ -285,7 +307,10 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 		{
 			if(!droppedOnTarget)
 			{
+				if(player1["TARGETED"]==cardData)
 				cardData.setTag("DETARGET");
+				if(player1["SELECTED"]==cardData)
+					cardData.setTag("DESELECT");
 				//SingleGame.GameManager.self._GameData["Player1.TARGETED"]=null;
 			}
 		waitingForDrop=false;

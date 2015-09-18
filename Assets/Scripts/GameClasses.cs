@@ -2929,6 +2929,7 @@ public class SingleGame
     public void uplink()
     {
       IList args=this[_args] as IList;
+			if(args!=null)
       for(int i=0;i<args.Count;i++)
       {
         this["arg"+i]=args[i];
@@ -3072,24 +3073,28 @@ public class SingleGame
           string vl=this["arg2"] as string;
           if(lst!=null&&cndi!=null&&cndi[vl]!=null)
           {
-            System.IComparable ins=cndi[vl] as System.IComparable;
+
+							double ins=System.Convert.ToDouble(cndi[vl]);
+		
             int ind=0;
           foreach(object o in lst)
             {
               Conditional ccc=o as Conditional;
               if(ccc!=null&&ccc[vl]!=null)
               {
-                System.IComparable cr=ccc[vl] as System.IComparable;
+								ccc[vl]=System.Convert.ToDouble(ccc[vl]);
+								double cr=System.Convert.ToDouble(ccc[vl]);
+
                 if(ins.CompareTo(cr)<0) {break;};
               }
               ind++;
             }
             lst.Insert(ind,cndi);
-            Debug.Log(ind);
+           // Debug.Log(ind);
           }
           else
           {
-            Debug.Log("Invalid list : "+(this["arg0"] as string));
+						Debug.Log(string.Format("Invalid list : {0} {1} {2} {3} ",this["arg0"],cndi,this["arg1"],lst));
           }
           if(this["arg1"]is string&&(this["arg1"] as string).StartsWith(_dr))
           {

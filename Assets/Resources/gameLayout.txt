@@ -20,10 +20,12 @@ highlightTargetsOfSelectedRule
 highlightAbilityTargets
 castTransformToBodyRule
 castAbilityRule
+useTransformRule
 activateAbilityEmitterRule
 updateTimeRule
 defaultBodyDamagePropagationRule
 detargetRule
+gameOverRule
 }
 
 list _Entities

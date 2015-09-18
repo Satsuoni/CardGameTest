@@ -144,6 +144,7 @@ notBusy
 isHandTransform
 enoughCastCost
 hasSlots
+condition { self _executeCondition }
 }
 }
 
@@ -163,7 +164,25 @@ condition { any |-._Entities condition { self <<._targetCond } }
 }
 }
 
+condition usableAbility
+{
+and {
+notBusy
+condition { le _castCost <=_Owner.Energy }
+condition { any |-._Entities condition { self <<._targetCond } }
+}
+}
 
+condition usableTransform
+{
+and
+ {
+ condition { tag BODY }
+ condition { greater Energy 0 }
+ notBusy
+ condition { any abilities usableAbility }
+ }
+}
 
 condition notCastableTransform
 {
@@ -179,6 +198,7 @@ or
 {
 castableTransform
 castableAbility
+usableTransform
 }
 }
 
@@ -250,11 +270,22 @@ condition {
          condition { any <<._SELECTED castableAbility }
          condition { tag BODY }
          condition { tag FREE }
+          condition { inverse tag BUSY }
          condition {  tag <=<<._SELECTED.sourceType }
          condition { strcomp <<._SELECTED._Owner.playerID <=_Owner.playerID }
 
          }
 }
+condition {
+        and
+         {
+         condition { any <<._SELECTED usableTransform }
+         condition {  any <<._SELECTED.abilities condition { any << condition { self <<._targetCond } } }
+ 
+         
+
+         }
+       }
  }
 }
 
@@ -278,6 +309,8 @@ and
  }
 }
 
+
+
 condition isAbilityCaster
 {
 and 
@@ -289,6 +322,24 @@ and
  }
 }
 
+condition isTransformUsePrepared
+{
+and
+ {
+ DidSelectCard
+ condition { any |-._Players condition {  and { condition { any SELECTED usableTransform } condition { isset TARGETED } }  } }
+ }
+}
+condition isTransformUser
+{
+and 
+ {
+ condition { isset SELECTED }
+ condition { any SELECTED  usableTransform }
+ condition { isset TARGETED }
+
+ }
+}
 
 condition isTransformCaster
 {
@@ -303,6 +354,11 @@ and
 condition leDelayZero
 {
 le Delay 0
+}
+
+condition leEnergyZero
+{
+le Energy 0
 }
 condition  hasMaintenance
 {

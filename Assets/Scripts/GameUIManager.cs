@@ -211,7 +211,7 @@ public class GameUIManager : MonoBehaviour {
     }
     SingleGame.GameManager.endChoice(null);
   }
-	bool postshuf=false;
+//	bool postshuf=false;
  IEnumerator trans()
 	{
 		Debug.Log("trans");
@@ -336,7 +336,7 @@ public class GameUIManager : MonoBehaviour {
 			Debug.Log(player1==data);
 			hooks.Remove(name);
 			SingleGame.GameManager.endHook();
-			postshuf=true;
+//			postshuf=true;
 			return;
 		}
     if(name=="transformation")

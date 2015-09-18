@@ -68,8 +68,9 @@ foreach _todeacc
  {
  tag_remove _target <=_tmp.activeTag
  }
-
+set _Owner <=_target
 accumulate condition { and { Activatable condition { inverse tag <=<<._target.activeTag } } } _target.HAND _toActivate
+accumulate condition { and { Activatable condition { inverse tag <=<<._target.activeTag } } } _target.BODY _toActivate
 foreach _toActivate
  {
  tag_set _target <=_tmp.activeTag
@@ -96,13 +97,25 @@ foreach _target.DECK
 {
 tag_set _target DECK
 set _target._Owner <=_tmp
-
+if _target condition { isset abilities }
+ {
+ foreach _target.abilities
+  {
+  set _target._Owner <=_tmp
+  }
+ }
 }
 foreach _target.BODY
 {
 tag_set _target BODY
 set _target._Owner <=_tmp
-
+if _target condition { isset abilities }
+ {
+ foreach _target.abilities
+  {
+  set _target._Owner <=_tmp
+  }
+ }
 }
 clear _tmp
 }
@@ -286,6 +299,7 @@ foreach _detarget
  tag_remove _target.SELECTED DESELECT
 clear  _target.SELECTED
 clear  _target.TARGETED
+
  }
 
 }
@@ -314,9 +328,9 @@ foreach _deaim
  }
  clear _deaim
  tag_remove _target.TARGETED DETARGET
-tag_remove _target.TARGETED BUSY
-tag_set _target.TARGETED FREE
+
 clear  _target.TARGETED
+
  }
 
 }
@@ -338,6 +352,7 @@ accumulate condition { isset SELECTED } _Game._Players _sel
  {
  set _tmp <=_target
  set _SELECTED <=_target.SELECTED
+ set _Owner <=_target.SELECTED._Owner
  tag_set _target.SELECTED SEL
  accumulate condition { and { condition { tag <=<<._target.activeTag }  condition { inverse tag SEL } } }  _Game._Entities _deacc
   
@@ -456,6 +471,7 @@ function _commands
   new event
   set event._Owner <=_target.SELECTED._Owner
   set event.Delay 0
+  set event.orDelay <=event.Delay
   set event.castSource <=_target.SELECTED
   set event.castTarget <=_target.TARGETED
   set event.func  <=|-.transform_cast
@@ -471,7 +487,7 @@ function _commands
 }
 
 
-function ability_cast
+function ability_cast_hand
 {
  
  tag_remove castSource HAND
@@ -483,7 +499,6 @@ function ability_cast
  tag_remove castEmitter BUSY
  push castSource._Owner.DISCARD castSource
  execute castTarget <=castSource._effects
-
  hook ability _
 }
 
@@ -505,11 +520,11 @@ function _commands
   new event
   set event._Owner <=_target.SELECTED._Owner
   set event.Delay <=_target.SELECTED.delay
-
+  set event.orDelay <=event.Delay
   set event.castSource <=_target.SELECTED
   set event.castEmitter <=_target.TARGETED
   set event.castTarget <=_target.AIMED
-  set event.func  <=|-.ability_cast
+  set event.func  <=|-.ability_cast_hand
   tag_remove _target.TARGETED FREE
 
   tag_set _target.TARGETED BUSY
@@ -518,6 +533,50 @@ function _commands
   tag_set _target.SELECTED DESELECT
   tag_set _target.TARGETED DETARGET
   clear _target.AIMED
+ 
+   }
+ clear _casters
+  }
+}
+
+function ability_cast_transform
+{
+ 
+ tag_set castSource FREE
+ tag_remove castSource BUSY
+ execute castTarget <=castSource._effects
+
+ hook ability _
+}
+
+conditional useTransformRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition isTransformUsePrepared
+function _commands
+  {
+  accumulate isTransformUser  _Game._Players _casters
+  foreach _casters
+  {
+
+  set castPlayer <=_target.SELECTED._Owner
+  sub castPlayer.Energy <=_target.SELECTED._castCost 
+  clear event 
+  new event
+  set event._Owner <=_target.SELECTED._Owner
+  set event.Delay <=_target.SELECTED.delay
+  set event.orDelay <=event.Delay
+####FIXTHISCRAP!!!
+  set event.castSource <=_target.SELECTED
+  set event.castEmitter <=_target.SELECTED
+  set event.castTarget <=_target.TARGETED
+  set event.func  <=|-.ability_cast_transform
+  tag_remove _target.SELECTED FREE
+  tag_set _target.SELECTED BUSY
+  insert event |-.Events Delay
+  tag_set _target.SELECTED DESELECT
+  clear _target.TARGETED
 
    }
  clear _casters
@@ -589,5 +648,15 @@ sub _target._Owner.Energy <=damage
 
 }
 
+ }
+}
+conditional gameOverRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition { any |-._Players leEnergyZero }
+function _commands
+ {
+ abort
  }
 }
