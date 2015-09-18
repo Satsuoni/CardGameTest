@@ -33,6 +33,7 @@ public class GameUIManager : MonoBehaviour {
 	public CardReceptor opponent_rlegRec;
 	List<CardReceptor> mpBody=new List<CardReceptor>();
   public Text energy;
+	public Text opponent_energy;
   SingleGame.Conditional player1;
   bool initDone=false;
 	public float shiftdur=0.2f;
@@ -120,6 +121,11 @@ public class GameUIManager : MonoBehaviour {
 			hooks.Remove("draw");
 			yield break;
 		}
+		/*if(postshuf)
+		{
+			SingleGame.Conditional dt= _game.hookData;
+			dt.logtags();
+		}*/
 		collectTime=false;
 		IList handlst=(_game._GameData["Player1"] as SingleGame.Conditional)["HAND"] as IList;
 		List<CardControl> trem=new List<CardControl>();
@@ -127,6 +133,7 @@ public class GameUIManager : MonoBehaviour {
 		for(int handc=0;handc<handCards.Count;handc++)
 		{
 			int newp=-1;
+			if(_game.hookData!=handCards[handc].cardData)
 			for(int pos=0;pos<handlst.Count;pos++)
 			{
 				if(handlst[pos]==handCards[handc].cardData)
@@ -152,6 +159,7 @@ public class GameUIManager : MonoBehaviour {
 		foreach(CardControl td in trem)
 		{
 			handCards.Remove(td);
+			Destroy(td.gameObject);
 		}
 		trem=null;
       foreach(IAnimInterface anim in anims)
@@ -203,6 +211,7 @@ public class GameUIManager : MonoBehaviour {
     }
     SingleGame.GameManager.endChoice(null);
   }
+	bool postshuf=false;
  IEnumerator trans()
 	{
 		Debug.Log("trans");
@@ -299,8 +308,9 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="test")
 		{
 			Debug.Log("testlog");
-			Debug.Log(data.hasTag(player1["activeTag"] as string));
-			//IList dl=data["_sel"] as IList;
+			Debug.Log(data["_target.SELECTED.delay"]);
+			//Debug.Log(data.hasTag(player1["activeTag"] as string));
+			//IList dl=data["_aim"] as IList;
 			//Debug.Log(dl.Count);
 			hooks.Remove("test");
 			SingleGame.GameManager.endHook();
@@ -315,7 +325,21 @@ public class GameUIManager : MonoBehaviour {
       SingleGame.GameManager.endHook();
       return;
     }
-		if(name=="transformation")
+
+		if(name=="shuffle")
+		{
+			Debug.Log("shuffle");
+			IList dl=player1["DISCARD"] as IList;
+			Debug.Log(dl.Count);
+			dl=player1["DECK"] as IList;
+			Debug.Log(dl.Count);
+			Debug.Log(player1==data);
+			hooks.Remove(name);
+			SingleGame.GameManager.endHook();
+			postshuf=true;
+			return;
+		}
+    if(name=="transformation")
 		{
 			StartCoroutine(trans());
 			return;
@@ -339,5 +363,9 @@ public class GameUIManager : MonoBehaviour {
     {
       energy.text=Mathf.FloorToInt((float)player1["Energy"]).ToString();
     }
-	}
+		if(opponent_energy!=null)
+		{
+			opponent_energy.text=Mathf.FloorToInt((float)_game._GameData["Player2.Energy"]).ToString();
+		}
+  }
 }

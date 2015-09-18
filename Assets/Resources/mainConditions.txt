@@ -163,6 +163,8 @@ condition { any |-._Entities condition { self <<._targetCond } }
 }
 }
 
+
+
 condition notCastableTransform
 {
 inverse
@@ -267,6 +269,26 @@ condition isTransformCastPrepared
 
 }
 
+condition isAbilityCastPrepared
+{
+and
+ {
+ DidSelectCard
+ condition { any |-._Players condition {  and { condition { any SELECTED castableAbility } condition { isset TARGETED } condition { isset AIMED } }  } }
+ }
+}
+
+condition isAbilityCaster
+{
+and 
+ {
+ condition { isset SELECTED }
+ condition { any SELECTED  castableAbility }
+ condition { isset TARGETED }
+ condition { isset AIMED }
+ }
+}
+
 
 condition isTransformCaster
 {
@@ -285,4 +307,12 @@ le Delay 0
 condition  hasMaintenance
 {
 isset _maintenanceCost
+}
+
+condition rawBodyDamaged
+{
+and  { condition { less Energy 0 } 
+       condition { tag DEFAULT_BODYPART } 
+       condition { tag BODY }
+   }
 }

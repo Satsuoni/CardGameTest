@@ -40,6 +40,7 @@ while PlayerHands
 accumulate countHand _Game._Players _tmpl
 foreach _tmpl
 {
+
 any _target.DECK _tmp
 remove _target.DECK _tmp
 push _target.HAND _tmp
@@ -148,7 +149,13 @@ function _commands
  accumulate countDeck _Game._Players _tmpl
  foreach _tmpl
  {
-  set DECK <=_target.DISCARD
+  set _tmp <=_target
+  foreach _target.DISCARD
+ {
+ tag_remove _target DISCARD
+ tag_set _target DECK
+ push _tmp.DECK _target
+ }
   clear _target.DISCARD
   newlist _target.DISCARD
   hook shuffle _target
@@ -307,6 +314,8 @@ foreach _deaim
  }
  clear _deaim
  tag_remove _target.TARGETED DETARGET
+tag_remove _target.TARGETED BUSY
+tag_set _target.TARGETED FREE
 clear  _target.TARGETED
  }
 
@@ -377,6 +386,7 @@ foreach _sel
  tag_remove _target  <=_tmp.targetTag 
  }
  tag_set _target.TARGETED <=_target.activeTag 
+
  if _target condition { inverse tag MAIN_PLAYER }
  { tag_set _target EMITTER_HIGHLIGHTED }
  }
@@ -398,8 +408,9 @@ foreach _sel
  {
 
   set _SELECTED <=_target.SELECTED
+  set _Owner <=_target.SELECTED._Owner
   accumulate condition { self <<._SELECTED._targetCond } _Game._Entities _aim
-  
+ 
   foreach _aim
    {
    tag_set _target <=_tmp.aimTag
@@ -460,6 +471,60 @@ function _commands
 }
 
 
+function ability_cast
+{
+ 
+ tag_remove castSource HAND
+ remove castSource._Owner.HAND castSource
+ tag_set castSource DISCARD
+ tag_set castSource FREE
+ tag_remove castSource BUSY
+ tag_set castEmitter FREE
+ tag_remove castEmitter BUSY
+ push castSource._Owner.DISCARD castSource
+ execute castTarget <=castSource._effects
+
+ hook ability _
+}
+
+
+conditional castAbilityRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition isAbilityCastPrepared
+function _commands
+  {
+  accumulate isAbilityCaster  _Game._Players _casters
+  foreach _casters
+  {
+
+  set castPlayer <=_target.SELECTED._Owner
+  sub castPlayer.Energy <=_target.SELECTED._castCost 
+  clear event 
+  new event
+  set event._Owner <=_target.SELECTED._Owner
+  set event.Delay <=_target.SELECTED.delay
+
+  set event.castSource <=_target.SELECTED
+  set event.castEmitter <=_target.TARGETED
+  set event.castTarget <=_target.AIMED
+  set event.func  <=|-.ability_cast
+  tag_remove _target.TARGETED FREE
+
+  tag_set _target.TARGETED BUSY
+  tag_set _target.SELECTED BUSY
+  insert event |-.Events Delay
+  tag_set _target.SELECTED DESELECT
+  tag_set _target.TARGETED DETARGET
+  clear _target.AIMED
+
+   }
+ clear _casters
+  }
+}
+
+
 
 conditional updateTimeRule
 {
@@ -506,3 +571,23 @@ foreach _target.BODY
  }
 }
 
+
+conditional defaultBodyDamagePropagationRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition { any |-._Entities rawBodyDamaged }
+function _commands
+ {
+accumulate rawBodyDamaged |-._Entities _damaged
+foreach _damaged
+{
+set damage 0
+sub damage <=_target.Energy
+set _target.Energy 0
+sub _target._Owner.Energy <=damage
+
+}
+
+ }
+}

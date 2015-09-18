@@ -104,6 +104,11 @@ public class SingleGame
 	{
 		protected Dictionary<string,object> _values;
 		protected HashSet<string> _tags;
+		public void logtags()
+		{
+			foreach(string t in _tags)
+				Debug.Log(t);
+		}
 		public virtual Conditional duplicate()
 		{
 			Conditional ret=new Conditional();
@@ -2622,13 +2627,18 @@ public class SingleGame
 			stack[_effects]=wrappedEffects;
 			stack[_target]=null;
 			stack[_rootl]=_GameData;
+			string curName="";
       Debug.Log(string.Format("effects : {0}",wrappedEffects.Count));
-			while(runThread)
+			try
+			{
+
+			
+      while(runThread)
 			{
 				foreach(object obj in rulesAndEffects)
 				{
 					Conditional eff=obj as Conditional;
-
+						curName=eff["__name"] as string;
 					if(!eff.hasTag(EXECUTE_PREFIX)&&!eff.hasTag(EXECUTE_POSTFIX))
 					{
 						Condition cnd=eff[_condition] as Condition;
@@ -2652,7 +2662,17 @@ public class SingleGame
 					}
 				}
 			}
-		}
+
+			}
+			catch (System.Exception ex)
+			{
+				Debug.Log(ex);
+				Debug.Log(curName);
+
+				// I WILL LOG THE EXCEPTION object "EX" here ! but ex.StackTrace is truncated!
+          }
+      
+    }
 
 		public static Conditional startChoice(string chname, IList objects)
 		{
@@ -3649,7 +3669,7 @@ public class SingleGame
       if(type==Type.SELF)
       {
         Condition var=cnd[variable] as Condition;
-				Debug.Log(variable+var.ToString());
+				//Debug.Log(variable+var.ToString());
 				if(var!=null)
         return var.isFulfilled(cnd,cnd[_upcond] as Conditional);
 				else

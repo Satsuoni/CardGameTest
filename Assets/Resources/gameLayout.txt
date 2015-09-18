@@ -11,16 +11,18 @@ fillEntitiesRule
 idRule
 ownRule
 getMainPlayer
-drawRule
 shuffleRule
+drawRule
 dismissRule
 activateRule
 deselectRule
 highlightTargetsOfSelectedRule
 highlightAbilityTargets
 castTransformToBodyRule
+castAbilityRule
 activateAbilityEmitterRule
 updateTimeRule
+defaultBodyDamagePropagationRule
 detargetRule
 }
 

@@ -223,6 +223,16 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
         else
          card.registerDropSuccess(false);
 			}
+			else
+			{
+				CardReceptor rc=eventData.pointerDrag.GetComponent<CardReceptor>();
+				if(rc!=null&&cardData.hasTag(player1["aimTag"] as string))
+				{ // this is ability resolution
+					player1["AIMED"]=cardData;
+					Debug.Log(rc);
+					rc.DropOccurred();
+				}
+			}
 		}
 
 	}

@@ -62,10 +62,11 @@ conditional SampleAbility Ability
 float _castCost 20
 string sourceType ATTACK_EDGE
 float delay 1
+
 function _effects {
-sub _target.Energy 50
+sub Energy 50
  }
-condition _targetCond { and { condition { tag CARD } condition { tag BODY } distance_melee } }
+condition _targetCond { and { condition { inverse strcomp <<._Owner.playerID <=_Owner.playerID } condition { tag BODY } distance_melee } }
 
 
 string _cardName "Sample Blunt Ability"

@@ -37,7 +37,7 @@ tag ATTACK_BLUNT
 tag FREE
 tag DEFAULT_BODYPART
 tag BODY
-float _Energy 0
+float Energy 0
 }
 
 conditional defaultHead defaultBodypart
@@ -84,6 +84,7 @@ list HAND
 
 list DECK
 { }
+
 list DISCARD
 {  }
 
