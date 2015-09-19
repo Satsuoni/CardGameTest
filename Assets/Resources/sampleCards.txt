@@ -19,9 +19,10 @@ condition _executeCondition { true }
 list abilities {
  conditional ab1 Ability
 { 
- condition _targetCond { and { condition { strcomp <<._Owner.playerID <=_Owner.playerID }  condition { inverse tag CARD } condition { tag BODY } distance_melee  } }
+ condition _targetCond { and { condition { inverse  strcomp <<._Owner.playerID <=_Owner.playerID }  condition { inverse tag CARD } condition { tag BODY } distance_melee  } }
 float _castCost 4
-function _effects { sub _target.Energy 25 }
+float delay 1
+function _effects { sub Energy 25 }
 }
   }
 

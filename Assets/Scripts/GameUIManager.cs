@@ -308,10 +308,10 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="test")
 		{
 			Debug.Log("testlog");
-			Debug.Log(data["_target.SELECTED.delay"]);
+      Debug.Log(data["_ability.delay"]);
 			//Debug.Log(data.hasTag(player1["activeTag"] as string));
-			//IList dl=data["_aim"] as IList;
-			//Debug.Log(dl.Count);
+			IList dl=data["_used"] as IList;
+			Debug.Log(dl.Count);
 			hooks.Remove("test");
 			SingleGame.GameManager.endHook();
 			return;

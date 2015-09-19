@@ -173,6 +173,15 @@ condition { any |-._Entities condition { self <<._targetCond } }
 }
 }
 
+condition targetedAbility
+{
+and {
+notBusy
+condition { le _castCost <=_Owner.Energy }
+condition { any <<._target.TARGETED condition { self <<._targetCond } }
+}
+}
+
 condition usableTransform
 {
 and

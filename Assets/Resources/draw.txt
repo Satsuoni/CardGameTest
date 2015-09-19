@@ -542,8 +542,9 @@ function _commands
 function ability_cast_transform
 {
  
- tag_set castSource FREE
- tag_remove castSource BUSY
+ tag_set castEmitter FREE
+ tag_remove castEmitter BUSY
+ hook nya _
  execute castTarget <=castSource._effects
 
  hook ability _
@@ -559,16 +560,18 @@ function _commands
   accumulate isTransformUser  _Game._Players _casters
   foreach _casters
   {
-
+  accumulate targetedAbility _target.SELECTED.abilities _used
+  hook test _
+  pop _used _ability
   set castPlayer <=_target.SELECTED._Owner
-  sub castPlayer.Energy <=_target.SELECTED._castCost 
+  sub castPlayer.Energy <=_ability._castCost 
+   hook test _
   clear event 
   new event
   set event._Owner <=_target.SELECTED._Owner
-  set event.Delay <=_target.SELECTED.delay
+  set event.Delay <=_ability.delay
   set event.orDelay <=event.Delay
-####FIXTHISCRAP!!!
-  set event.castSource <=_target.SELECTED
+  set event.castSource <=_ability
   set event.castEmitter <=_target.SELECTED
   set event.castTarget <=_target.TARGETED
   set event.func  <=|-.ability_cast_transform
