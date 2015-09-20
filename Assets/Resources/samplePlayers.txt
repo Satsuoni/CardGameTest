@@ -6,7 +6,7 @@ tag MAIN_PLAYER
 string activeTag main_ACTIVE
 string targetTag main_TARGETABLE
 string aimTag main_AIMABLE
-
+string dismissableTag main_DISMISSABLE
 list DECK
 {
 conditional _ CardSampleHead
@@ -29,6 +29,7 @@ string _name Dummy
 string activeTag p2_ACTIVE
 string targetTag p2_TARGETABLE
 string aimTag p2_AIMABLE
+string dismissableTag p2_DISMISSABLE
 
 list DECK
 {

@@ -14,7 +14,27 @@ float _maintenanceCost 1
 float _dismissCost 40
 float _durability 100
 
-list _addedRules { }
+list _addedRules {
+conditional __ 
+{
+tag RULE
+tag EXECUTE_POSTFIX
+ 
+ condition _condition {
+ and {
+ condition { command_type _currentCommand push }
+ condition { strcomp _currentCommand.arg1 castSource }
+ condition { any castSource condition { tag TRANSFORM } }
+ condition { any castSource condition { tag BODY } }
+ }
+ }
+ function _commands 
+ {
+
+ return add castSource._Owner.Energy 1000
+ }
+}
+ }
 condition _executeCondition { true }
 list abilities {
  conditional ab1 Ability

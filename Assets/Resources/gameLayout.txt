@@ -18,6 +18,7 @@ activateRule
 deselectRule
 highlightTargetsOfSelectedRule
 highlightAbilityTargets
+markDismissableRule
 castTransformToBodyRule
 castAbilityRule
 useTransformRule
@@ -43,7 +44,10 @@ list Events
 {
 
 }
-
+conditional dismiss_area
+{
+tag DISMISS_AREA
+}
 conditional DistanceTicker
 {
 }

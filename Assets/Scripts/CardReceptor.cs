@@ -77,7 +77,7 @@ abstract public class ConditionalUIEntity: MonoBehaviour
       }
     }
   }
-	public virtual  void Highlight(bool light){}
+	public virtual  void Highlight(bool light,string type=""){}
 
 	public virtual void Start ()
 	{
@@ -90,6 +90,10 @@ abstract public class ConditionalUIEntity: MonoBehaviour
 		   }
 		else
 		{
+
+      if(data!=null&&(data.hasTag("main_DISMISSABLE")))
+        Highlight(true,"dismissal");
+        else
 			Highlight(false);
 		}
 	}
@@ -107,9 +111,12 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 	ArrowPointer from;
 	#region IBeginDragHandler implementation
 	Vector2 frompoint;
+  public GameObject redGlow;
 	public void OnBeginDrag (PointerEventData eventData)
 	{
-		if(!cardData.hasTag(player1["activeTag"] as string)) return;
+		if(!cardData.hasTag(player1["activeTag"] as string)&&
+       !cardData.hasTag(player1["dismissableTag"] as string)) return;
+
 		GameObject go=Instantiate(arrow) as GameObject;
 		ArrowPointer pnt=go.GetComponent<ArrowPointer>();
 		RectTransform rt=go.GetComponent<RectTransform>();
@@ -121,7 +128,7 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 		Debug.Log(player1["TARGETED"]);
 		if(player1["TARGETED"]==cardData)
 		{
-			Debug.Log("highlight");
+			//Debug.Log("highlight");
 		player1.setTag("EMITTER_HIGHLIGHTED");
 		}
 		else
@@ -129,7 +136,7 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 			lock(SingleGame.gameLock)
 			{
 				SingleGame.GameManager.self._GameData["Player1.SELECTED"]=data;//card.cardData;
-				Debug.Log(player1["SELECTED"]);
+			//	Debug.Log(player1["SELECTED"]);
 			}
 		}
 	}
@@ -239,6 +246,13 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 			else
 			{
 				CardReceptor rc=eventData.pointerDrag.GetComponent<CardReceptor>();
+        if(cardData.hasTag("DISMISS_AREA")&&rc!=null&&
+           rc.cardData.hasTag(player1["dismissableTag"] as string))
+        {
+          rc.cardData.setTag("DESELECT");
+          rc.cardData.setTag("DISMISS_MARK");
+          return;
+        }
 				if(rc!=null&&cardData.hasTag(player1["aimTag"] as string))
 				{ // this is ability resolution
 					player1["AIMED"]=cardData;
@@ -246,6 +260,7 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 					rc.DropOccurred();
 					return;
 				}
+
 				if(rc!=null&&cardData.hasTag(player1["targetTag"] as string))
 				   {
 					player1["TARGETED"]=cardData;
@@ -265,17 +280,32 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 	public override void Start () {
 
 	}
-  public override void Highlight(bool light)
+  public override void Highlight(bool light, string type="")
   {
     if(glow!=null)
     {
       if(light)
       {
+        if(type!="dismissal")
+        {
         glow.gameObject.SetActive(true);
         glow.SetAsLastSibling();
+          if(redGlow!=null)
+          redGlow.SetActive(false);
+        }
+        else
+        {
+          if(redGlow!=null)
+          {
+            redGlow.SetActive(true);
+            (redGlow.transform as RectTransform).SetAsLastSibling();
+          }
+        }
       }
       else
       {
+        if(redGlow!=null)
+          redGlow.SetActive(false);
         glow.gameObject.SetActive(false);
       }
     }
@@ -284,6 +314,11 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 	// Update is called once per frame
 	public override void Update () {
 		base.Update();
+    if(validTag=="DISMISS_AREA"&&cardData!=null)
+    {
+    //  Debug.Log(cardData.hasTag("main_TARGETABLE"));
+    //  Debug.Log(cardData.hasTag("DISMISS_AREA"));
+    } 
 	 if(data!=null&&data.hasTag("CARD"))
 		{//render a card on this thing...
 			if(img==null)

@@ -2664,29 +2664,36 @@ public class SingleGame
 			get{ return _choiceList;}
 		}
 
+    List<Conditional> wrapGameEffects()
+    {
+      IList rulesAndEffects=_GameData[_effects] as IList;
+      List<Conditional> wrappedEffects=new List<Conditional>();
+      foreach(object obj in rulesAndEffects)
+      {
+        
+        Conditional eff=obj as Conditional;
+        if(eff==null)
+        {
+          #if THING
+          Debug.Log(string.Format("Invalid effect description: {0}", obj));
+          #endif
+        } else
+        {
+          Conditional wrap=new Conditional(false);
+          wrap[_effect]=eff;
+          wrappedEffects.Add(wrap);
+        }
+      }
+      return wrappedEffects;
+    }
 		void mainGameThread()
 		{
 			IList rulesAndEffects=_GameData[_effects] as IList;
 
 			Conditional stack=new Conditional();
 			stack[_Game]=_GameData;
-			List<Conditional> wrappedEffects=new List<Conditional>();
-			foreach(object obj in rulesAndEffects)
-			{
-
-				Conditional eff=obj as Conditional;
-				if(eff==null)
-				{
-					#if THING
-					Debug.Log(string.Format("Invalid effect description: {0}", obj));
-					#endif
-				} else
-				{
-					Conditional wrap=new Conditional();
-					wrap[_effect]=eff;
-					wrappedEffects.Add(wrap);
-				}
-			}
+      List<Conditional> wrappedEffects=wrapGameEffects();
+			
 			stack[_effects]=wrappedEffects;
 			stack[_target]=null;
 			stack[_rootl]=_GameData;
@@ -2698,8 +2705,11 @@ public class SingleGame
 			
       while(runThread)
 			{
-				foreach(object obj in rulesAndEffects)
+          int ii=0;
+				while(ii<rulesAndEffects.Count)
 				{
+            object obj =rulesAndEffects[ii];
+            ii++;
 					Conditional eff=obj as Conditional;
 						curName=eff["__name"] as string;
 					if(!eff.hasTag(EXECUTE_PREFIX)&&!eff.hasTag(EXECUTE_POSTFIX))
@@ -2713,7 +2723,13 @@ public class SingleGame
 							Operation op=new Operation(Operation.Commands.NEW);
 							Conditional nstack=op.createStack(stack, eff);
               //Debug.Log(string.Format("nstack effects : {0}",(nstack[_effects] as IList).Count));
-							op.executeList(eff[_commands], nstack);
+                int oneff=rulesAndEffects.Count;
+              op.executeList(eff[_commands], nstack);
+                if(rulesAndEffects.Count!=oneff)
+                {
+                  stack[_effects]=wrapGameEffects();
+                  Debug.Log("added trules");
+                }
 							if(nstack.hasTag(TAG_ABORT))
 							{
 								Debug.Log("GameObject Overlapped");
@@ -3586,8 +3602,11 @@ public class SingleGame
 			while(didActivate)
 			{
 				didActivate=false;
-				foreach(object o in efs)
+        int ii=0;
+				while(ii<efs.Count)
 				{
+          object o= efs[ii];
+          ii++;
           //Debug.Log("effecting");
 					Conditional preffect=o as Conditional;
 					Conditional effect=null;
@@ -3873,6 +3892,7 @@ public class SingleGame
 					if(cnd2==null)
 						return false;
 					Conditional temp=new Conditional(false);
+         // Debug.Log(string.Format("Count: {0}",cnt));
 					temp[_count]=cnt;
 					temp[_parent]=cnd;
 					return cnd2.isFulfilled(temp,cnd);

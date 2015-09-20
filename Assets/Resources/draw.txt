@@ -10,11 +10,25 @@ function _commands
   foreach _dismissQueue
    {
    tag_remove _target BODY
-   foreach _target.abilities
+   foreach _target._addedRules
   {
-  remove _Game._Entities _target
-  }
+  remove |-._effects _target
+  } 
    sub _target._Owner.Energy <=_target._dismissCost
+   remove _target._Owner.BODY _target
+   accumulate hasFreeSlot _target._Owner.DEFAULT_BODY _putback
+   set _tbo <=_target
+   foreach _putback
+{
+hook test _target
+ push _target._Owner.BODY _target
+ tag_remove _target BUSY
+ tag_set _target FREE
+ if _tbo hasSlots
+ {
+ hook test _target
+ }
+}   
    shift _target._Owner.HAND _discard
    tag_switch _discard HAND DISCARD
    push _target._Owner.DISCARD _discard
@@ -22,7 +36,9 @@ function _commands
    push _target._Owner.HAND _target
    set _target.Energy 0
    tag_set _target HAND
-   hook tohand _target
+   tag_remove _target BUSY
+   tag_set _target FREE
+   hook draw _target
    }
   clear _dismissQueue
  }
@@ -97,11 +113,18 @@ foreach _target.DECK
 {
 tag_set _target DECK
 set _target._Owner <=_tmp
+set _tcard <=_target
 if _target condition { isset abilities }
  {
  foreach _target.abilities
   {
   set _target._Owner <=_tmp
+  set _target._Source <=_tcard
+  }
+   foreach _target._addedRules
+  {
+  set _target._Owner <=_tmp
+  set _target._Source <=_tcard
   }
  }
 }
@@ -265,11 +288,12 @@ function _commands
      push _Game._Entities  _target
      }
    }
-  push _Game._Entities  DistanceTicker 
-  push _Game._Entities  DistanceTickerMelee 
-  push _Game._Entities  DistanceTickerMid
-  push _Game._Entities  DistanceTickerFar
-  push _Game._Entities  Timeline 
+  push _Game._Entities  |-.DistanceTicker 
+  push _Game._Entities  |-.DistanceTickerMelee 
+  push _Game._Entities  |-.DistanceTickerMid
+  push _Game._Entities  |-.DistanceTickerFar
+  push _Game._Entities  |-.Timeline 
+  push _Game._Entities  |-.dismiss_area 
   set _Game.mainPlayer <=_Game.Player1
   tag_set _Game ENTITIES_DONE
   }
@@ -452,6 +476,10 @@ function transform_cast
  tag_remove castSource BUSY
  push castSource._Owner.BODY castSource
  set castSource.Energy <=castSource._durability
+ foreach castSource._addedRules
+ {
+ append |-._effects _target
+ }
  hook transformation _
 }
 
@@ -539,6 +567,28 @@ function _commands
   }
 }
 
+conditional markDismissableRule
+{
+tag MAIN_RULE
+tag INVIOLATE
+condition _condition areTransformedBodyParts
+function _commands
+{
+foreach |-._Players
+ {
+ set _plr <=_target
+ foreach |-._Entities
+ {
+ if _target condition { inverse  or { isDismissableByPlr } }
+ { tag_remove _target <=_plr.dismissableTag }
+ if _target isDismissableByPlr
+  { tag_set _target <=_plr.dismissableTag }
+ }
+ 
+ }
+}
+}
+
 function ability_cast_transform
 {
  
@@ -565,7 +615,6 @@ function _commands
   pop _used _ability
   set castPlayer <=_target.SELECTED._Owner
   sub castPlayer.Energy <=_ability._castCost 
-   hook test _
   clear event 
   new event
   set event._Owner <=_target.SELECTED._Owner

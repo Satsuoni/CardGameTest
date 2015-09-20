@@ -110,6 +110,15 @@ count _Owner.BODY
       condition { equal _count <=<<.slots }
 }
 
+condition hasFreeSlot
+{
+inverse 
+or {
+condition { any  _Owner.BODY condition { strcomp slot <=<<.slot } }
+condition { any  _Owner.BODY condition { tag  <=<<.slot } }
+}
+}
+
 condition isHandTransform
 {
 and
@@ -290,12 +299,31 @@ condition {
          {
          condition { any <<._SELECTED usableTransform }
          condition {  any <<._SELECTED.abilities condition { any << condition { self <<._targetCond } } }
- 
-         
-
          }
        }
+condition {
+        and
+         {
+         condition { any <<._SELECTED  condition { tag <=<<.<<._SELECTED._Owner.dismissableTag } }
+         condition {  tag DISMISS_AREA }
+         }
+       }       
  }
+}
+
+condition isDismissableByPlr
+{
+and {
+condition { tag TRANSFORM }
+condition { tag BODY }
+condition { strcomp _Owner.playerID <=<<._plr.playerID }
+}
+}
+
+condition areTransformedBodyParts
+{
+any |-._Players
+ condition { any BODY condition { tag TRANSFORM } }
 }
 
 condition isTransformCastPrepared

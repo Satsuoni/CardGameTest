@@ -31,6 +31,8 @@ public class GameUIManager : MonoBehaviour {
 	public CardReceptor opponent_rhandRec;
 	public CardReceptor opponent_llegRec;
 	public CardReceptor opponent_rlegRec;
+
+  public CardReceptor dismissArea;
 	List<CardReceptor> mpBody=new List<CardReceptor>();
   public Text energy;
 	public Text opponent_energy;
@@ -104,6 +106,9 @@ public class GameUIManager : MonoBehaviour {
 		opponent_llegRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_LLEG");
 		
 		opponent_rlegRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_RLEG");
+    dismissArea.refDataFromString("dismiss_area");
+    Debug.Log("dimissaAREA");
+    Debug.Log(dismissArea.cardData.hasTag("DISMISS_AREA"));
     player1=_game._GameData["Player1"] as SingleGame.Conditional;
      initDone=true;
 		collectTime=true;
@@ -305,13 +310,29 @@ public class GameUIManager : MonoBehaviour {
 			SingleGame.GameManager.endHook();
 			return;
 		}
+    if(name=="discard")
+    {
+      Debug.Log("discarded");
+      foreach(CardReceptor cr in mpBody)
+      {
+        cr.refDataFromListByString("Player1.BODY","slot",cr.validTag);
+        if(cr.cardData==null)
+          cr.refDataFromListByTag("Player1.BODY",cr.validTag);
+      }
+
+
+      hooks.Remove(name);
+      SingleGame.GameManager.endHook();
+      return;
+    }
 		if(name=="test")
 		{
 			Debug.Log("testlog");
-      Debug.Log(data["_ability.delay"]);
+      Debug.Log(data["slot"]);
+      Debug.Log(data["_Owner.BODY"]);
 			//Debug.Log(data.hasTag(player1["activeTag"] as string));
-			IList dl=data["_used"] as IList;
-			Debug.Log(dl.Count);
+			//IList dl=data["_used"] as IList;
+		//	Debug.Log(dl.Count);
 			hooks.Remove("test");
 			SingleGame.GameManager.endHook();
 			return;

@@ -223,7 +223,7 @@ public class CardControl : ConditionalUIEntity, UnityEngine.EventSystems.IBeginD
 		game=cardData[SingleGame._rootl] as SingleGame.Conditional;
 		player1=game["Player1"] as SingleGame.Conditional;
 	}
-	public override  void Highlight(bool light){
+	public override  void Highlight(bool light, string type=""){
 		glow.gameObject.SetActive(light);
 	}
 	// Update is called once per frame
