@@ -337,7 +337,12 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 						img.texture=txt;
 				}
 			}
+
 		}
+    else
+    {
+      if(img!=null){ Destroy(img.gameObject); img=null;}
+    }
 		if(waitingForDrop)
 		{
 			if(!droppedOnTarget)

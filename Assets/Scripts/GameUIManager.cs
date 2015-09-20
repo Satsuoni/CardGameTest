@@ -315,9 +315,11 @@ public class GameUIManager : MonoBehaviour {
       Debug.Log("discarded");
       foreach(CardReceptor cr in mpBody)
       {
+        cr.cardData=null;
         cr.refDataFromListByString("Player1.BODY","slot",cr.validTag);
         if(cr.cardData==null)
           cr.refDataFromListByTag("Player1.BODY",cr.validTag);
+        Debug.Log(cr.cardData["slot"]);
       }
 
 
@@ -328,8 +330,8 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="test")
 		{
 			Debug.Log("testlog");
-      Debug.Log(data["slot"]);
-      Debug.Log(data["_Owner.BODY"]);
+//      Debug.Log(data["slot"]);
+     // Debug.Log(data["_Owner.BODY"]);
 			//Debug.Log(data.hasTag(player1["activeTag"] as string));
 			//IList dl=data["_used"] as IList;
 		//	Debug.Log(dl.Count);

@@ -10,6 +10,8 @@ function _commands
   foreach _dismissQueue
    {
    tag_remove _target BODY
+   tag_remove _target DISMISS_MARK
+   tag_remove _target <=_target._Owner.dismissableTag
    foreach _target._addedRules
   {
   remove |-._effects _target
@@ -24,6 +26,7 @@ hook test _target
  push _target._Owner.BODY _target
  tag_remove _target BUSY
  tag_set _target FREE
+  tag_set _target BODY
  if _tbo hasSlots
  {
  hook test _target
