@@ -56,6 +56,8 @@ public class SingleGame
   public const string _parentl="<--|";
 	public const string _rootl="|-";
   public const string _conditional_self="_";
+  public const string _accessBindings="_accessBindings";
+  public const string _id="_id";
   //helper dictionaries
 	public static Dictionary<string,List<object>> acceptedValues=new Dictionary<string, List<object>>();
 	public static Dictionary<string,System.Type> acceptedTypes=new Dictionary<string, System.Type>();
@@ -159,6 +161,37 @@ public class SingleGame
 		{
 			return _values.ContainsKey(var);
 		}
+    IList accessBindings(string name)
+    {
+      object game;
+      _values.TryGetValue(_rootl,out game);
+      if(game==null) return null;
+      Conditional gm=game as Conditional;
+      if(gm==null) return null;
+      object ex;
+      gm._values.TryGetValue(_accessBindings,out ex);
+      Conditional dict=ex as Conditional;
+      if(dict==null) return null;
+      object exlist=null;
+      if(! dict._values.TryGetValue(name,out exlist))
+         return null;
+      return (exlist as IList);
+    }
+    bool tryGetDouble(object obj,out double ret)
+    {
+      if(obj==null)
+      {ret=0; return false;}
+      if(obj is System.IConvertible)
+      {
+        ret=((System.IConvertible)obj).ToDouble(null);
+        return true;
+      }
+      else
+      {
+        ret=0;
+        return false;
+      }
+    }
 		public object this [string name] { //let us add the dot notation...
 			get {
 				string [] ln=name.Split('.');
@@ -168,7 +201,53 @@ public class SingleGame
           if(ln[0]==_conditional_self)
             return this;
 					if(_values.TryGetValue(ln[0], out ret))
+          {
+            IList ab=accessBindings(name);
+            double dret=0;
+            if(ab!=null&&ab.Count>0&&tryGetDouble(ret,out dret))
+            {
+              bool changed=false;
+              foreach(object o in ab)
+              {
+                Conditional accessBound=o as Conditional;
+                if(accessBound==null)
+                {
+                  #if THING
+                  Debug.Log(string.Format("Invalid access bound list element {0}",o));
+                  #endif
+                  return ret;
+                }
+                if(accessBound.hasTag("IN_BINDING")) continue;
+                Condition cnd=accessBound[_condition] as Condition;
+                if(cnd==null)
+                {
+                  #if THING
+                  Debug.Log(string.Format("No condition ffound in access bound element {0}",accessBound));
+                  #endif
+                  continue;
+                }
+                accessBound.setTag("IN_BINDING");
+
+                if(cnd.isFulfilled(this,this[_upcond] as Conditional))
+                {
+                  Conditional nstack=new Conditional(false);
+                  nstack[_parentl]=this;
+                  nstack[_upcond]=this;
+                  nstack[_effects]=new List<Conditional>();
+                  nstack[_rootl]=_values[_rootl];
+                  nstack["_bound"]=dret;
+                  Operation e=new Operation(Operation.Commands.NEW);
+                  e.executeList(accessBound[_commands],nstack);
+                  dret=(double)nstack["_bound"];
+                  //Debug.Log("bound");
+                  changed=true;
+                }
+                accessBound.removeTag("IN_BINDING");
+              }
+              if(changed) return dret;
+            }
 						return ret;
+          }
 					else
 						return null;
 				} else
@@ -186,29 +265,7 @@ public class SingleGame
 				string [] ln=name.Split('.');
 				if(ln.Length==1)
 				{
-					if(acceptedValues!=null&&acceptedValues.ContainsKey(name))
-					{
-						List<object> acc=acceptedValues[name];
-						if(!acc.Contains(value))
-						{
-							#if THING
-							Debug.Log(string.Format("Invalid value: {0} for name: {1}", value, name));
-							#endif
-							return;
-						}
-					}
-					if(acceptedTypes!=null&&acceptedTypes.ContainsKey(name))
-					{
-						System.Type acc=acceptedTypes[name];
-						System.Type ct=value.GetType();
-						if(ct!=acc&&!ct.IsSubclassOf(acc))//subclasses are accepted
-						{
-							#if THING
-							Debug.Log(string.Format("Invalid type: {0} for name: {1}", ct, name));
-							#endif
-							return;
-						}
-					}
+					
 					_values[name]=value;
 				} else
 				{
@@ -221,10 +278,16 @@ public class SingleGame
 				}
 			}
 		}
-		public Conditional()
+    static int curId=0;
+		public Conditional(bool useid=true)
 		{
 			_values=new Dictionary<string, object>();
 			_tags=new HashSet<string>();
+      if(useid)
+      {
+      _values[_id]=curId;
+      curId++;
+      }
 		}
 		public bool hasTag(string tag)
 		{
@@ -2941,7 +3004,7 @@ public class SingleGame
 		}
 		public Conditional createStack(Conditional oldstack, Conditional exeffect)
 		{
-			Conditional ret=new Conditional();
+			Conditional ret=new Conditional(false);
 			List <Conditional> efs=new List<Conditional>();
 			if(oldstack[_effects]==null)
 				ret[_effects]=null;
@@ -2952,7 +3015,7 @@ public class SingleGame
 				foreach(object ef in elist)
 				{
 					Conditional eff=ef as Conditional;
-					Conditional efContain=new Conditional();
+					Conditional efContain=new Conditional(false);
 					if(eff.hasTag(TAG_STACKED))
 						efContain.setTag(TAG_STACKED);
           if(eff[_effect]==exeffect)
@@ -2972,7 +3035,7 @@ public class SingleGame
 			ret[_currentCommand]=null;
 			foreach(string nm in __stackValues)
 				ret[nm]=oldstack[nm];
-			ret[_Source]=exeffect[_effect];
+			ret[_Source]=exeffect;
 			return ret;//TOFIX
 		}
 		static public object deRef(object a, Conditional stack)
@@ -3336,7 +3399,7 @@ public class SingleGame
 				break;
 			case Commands.CLEAR:
 				{
-					string nm=this["arg0"] as string;
+          string nm=deRef(this["arg0"],stack) as string;
 					if(nm!=null)
 						stack[nm]=null;
 				}
@@ -3344,7 +3407,7 @@ public class SingleGame
 				break;
 			case Commands.POP: //arg0 - list name, arg1- stackvar
 				{
-					string nm=this["arg0"] as string;
+          string nm=deRef(this["arg0"],stack) as string;
 					IList lst=stack[nm] as IList;
 					string retname=this["arg1"] as string;
 					if(lst!=null&&retname!=null)
@@ -3360,7 +3423,8 @@ public class SingleGame
 				break;
 			case Commands.PUSH: //arg0 - list name, arg1- stackvar
 				{
-					string nm=this["arg0"] as string;
+
+          string nm=deRef(this["arg0"],stack) as string;
 					IList lst=stack[nm] as IList;
 					string retname=this["arg1"] as string;
 					if(lst==null)
@@ -3377,7 +3441,7 @@ public class SingleGame
 				break;
 			case Commands.SHIFT: //arg0 - list name, arg1- stackvar
 				{
-					string nm=this["arg0"] as string;
+          string nm=deRef(this["arg0"],stack) as string;
 					IList lst=stack[nm] as IList;
 					string retname=this["arg1"] as string;
 					if(lst!=null&&retname!=null)
@@ -3393,7 +3457,7 @@ public class SingleGame
 				break;
 			case Commands.APPEND: //arg0 - list name, arg1- stackvar
 				{
-					string nm=this["arg0"] as string;
+          string nm=deRef(this["arg0"],stack) as string;
 					IList lst=stack[nm] as IList;
 					string retname=this["arg1"] as string;
 					if(lst==null)
@@ -3410,7 +3474,7 @@ public class SingleGame
 				break;
 			case Commands.REMOVE: // removes object from listarg0 - list name, arg1- stackvar
 				{
-					string nm=this["arg0"] as string;
+          string nm=deRef(this["arg0"],stack) as string;
 					IList lst=stack[nm] as IList;
 					string retname=this["arg1"] as string;
 					if(lst==null)
@@ -3427,7 +3491,7 @@ public class SingleGame
 				break;
 			case Commands.ANY: //get any (random) in list without deleting arg0 - list name, arg1- stackvar
 				{
-					string nm=this["arg0"] as string;
+          string nm=deRef(this["arg0"],stack) as string;
 					IList lst=stack[nm] as IList;
 					string retname=this["arg1"] as string;
 					if(lst!=null&&retname!=null)
@@ -3445,7 +3509,7 @@ public class SingleGame
 			case Commands.HOOK: //call hook of name with data
 				{
 					//Monitor.Exit(gameLock);
-					string nm=this["arg0"] as string;
+          string nm=deRef(this["arg0"],stack) as string;
 					string nmData=this["arg1"] as string;
 					GameManager.startHook(nm, stack[nmData] as Conditional);
 					//Monitor.Enter(gameLock);
@@ -3455,7 +3519,7 @@ public class SingleGame
 			case Commands.CHOICE: //call for player choice, store result  in arg2: 
 				{
 					//Monitor.Exit(gameLock);
-					string chname=this["arg0"] as string;
+					string chname=deRef(this["arg0"],stack) as string;
 					string nm=this["arg1"] as string;
 					IList lst=stack[nm] as IList;
 					if(lst==null)
@@ -3712,7 +3776,7 @@ public class SingleGame
         if(scond==null) return false;
         IList lsta=op[_args] as IList;
         if(lsta.Count<=nm) return false;
-        Conditional secval=new Conditional();
+        Conditional secval=new Conditional(false);
         secval["_arg"]=lsta[nm];
         return scond.isFulfilled(secval,cnd);
       }
@@ -3808,7 +3872,7 @@ public class SingleGame
 					Condition cnd2=values[1] as Condition;
 					if(cnd2==null)
 						return false;
-					Conditional temp=new Conditional();
+					Conditional temp=new Conditional(false);
 					temp[_count]=cnt;
 					temp[_parent]=cnd;
 					return cnd2.isFulfilled(temp,cnd);

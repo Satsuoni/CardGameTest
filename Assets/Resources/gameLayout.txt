@@ -28,6 +28,12 @@ detargetRule
 gameOverRule
 }
 
+
+conditional _accessBindings
+{
+
+}
+
 list _Entities
 {
 

@@ -127,4 +127,23 @@ Up the condition hierarchy (or stack): <<
 Dereference: <=
 self: _
 
+Looks like I need to add access bound effects...
+access bounds added! Like so:
+conditional cc
+{
+condition _condition { true }
+function _commands
+ {
+ mul _bound 5
+ }
+}
+conditional _accessBindings
+{
+list _castCost
+ { cc }
+}
+addding dereference to first parameters of lists
+
+
+
 
