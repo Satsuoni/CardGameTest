@@ -1,4 +1,18 @@
 
+function failEvent
+{
+ if _ condition { isset castSource }
+ {
+tag_remove castSource BUSY
+tag_set castSource FREE
+ }
+ if _ condition { isset castEmitter }
+ {
+tag_remove castEmitter BUSY
+tag_set castEmitter FREE
+ }
+ remove |-.Events _
+} 
 conditional dismissRule
 {
 tag MAIN_RULE
@@ -9,6 +23,7 @@ function _commands
   accumulate forDismissal _Game._Entities _dismissQueue
   foreach _dismissQueue
    {
+   set _tmp <=_target
    tag_remove _target BODY
    tag_remove _target DISMISS_MARK
    tag_remove _target <=_target._Owner.dismissableTag
@@ -16,6 +31,14 @@ function _commands
   {
   remove |-._effects _target
   } 
+ accumulate isEventRelated  |-.Events remEvents
+  foreach remEvents
+  {
+ hook nyah _ 
+ execute _target <=|-.failEvent
+
+
+  }
    sub _target._Owner.Energy <=_target._dismissCost
    remove _target._Owner.BODY _target
    accumulate hasFreeSlot _target._Owner.DEFAULT_BODY _putback

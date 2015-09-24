@@ -33,6 +33,10 @@ public class GameUIManager : MonoBehaviour {
 	public CardReceptor opponent_rlegRec;
 
   public CardReceptor dismissArea;
+
+	public TickerReceptor melee;
+	public TickerReceptor mid;
+	public TickerReceptor far;
 	List<CardReceptor> mpBody=new List<CardReceptor>();
   public Text energy;
 	public Text opponent_energy;
@@ -107,6 +111,9 @@ public class GameUIManager : MonoBehaviour {
 		
 		opponent_rlegRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_RLEG");
     dismissArea.refDataFromString("dismiss_area");
+		melee.refDataFromString("DistanceTickerMelee");
+		mid.refDataFromString("DistanceTickerMid");
+		far.refDataFromString("DistanceTickerFar");
     Debug.Log("dimissaAREA");
     Debug.Log(dismissArea.cardData.hasTag("DISMISS_AREA"));
     player1=_game._GameData["Player1"] as SingleGame.Conditional;
@@ -319,7 +326,7 @@ public class GameUIManager : MonoBehaviour {
         cr.refDataFromListByString("Player1.BODY","slot",cr.validTag);
         if(cr.cardData==null)
           cr.refDataFromListByTag("Player1.BODY",cr.validTag);
-        Debug.Log(cr.cardData["slot"]);
+//        Debug.Log(cr.cardData["slot"]);
       }
 
 

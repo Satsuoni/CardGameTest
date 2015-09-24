@@ -18,6 +18,9 @@ conditional _  SampleAbility
 conditional _ CardSampleHead
 conditional _ CardSampleLHand
 conditional _  SampleAbility 
+conditional _  CardSampleLegs
+conditional _  CardSampleLegs
+conditional _  CardSampleLegs
  }
 
 }

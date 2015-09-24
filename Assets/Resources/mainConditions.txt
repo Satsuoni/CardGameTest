@@ -305,6 +305,7 @@ condition {
         and
          {
          condition { any <<._SELECTED  condition { tag <=<<.<<._SELECTED._Owner.dismissableTag } }
+
          condition {  tag DISMISS_AREA }
          }
        }       
@@ -316,6 +317,7 @@ condition isDismissableByPlr
 and {
 condition { tag TRANSFORM }
 condition { tag BODY }
+
 condition { strcomp _Owner.playerID <=<<._plr.playerID }
 }
 }
@@ -408,4 +410,13 @@ and  { condition { less Energy 0 }
        condition { tag DEFAULT_BODYPART } 
        condition { tag BODY }
    }
+}
+
+condition isEventRelated
+{
+or
+ {
+condition { refcomp castSource <<._target }
+condition { refcomp castEmitter <<._target }
+ }
 }

@@ -54,13 +54,20 @@ conditional DistanceTicker
 
 conditional DistanceTickerMelee
 {
+tag DISTANCE_TICKER
+string distance MELEE
 }
 conditional DistanceTickerMid
 {
+tag DISTANCE_TICKER
+string distance MIDRANGE
 }
 conditional DistanceTickerFar
 {
+tag DISTANCE_TICKER
+string distance FAR
 }
+
 conditional Timeline
 {
 }

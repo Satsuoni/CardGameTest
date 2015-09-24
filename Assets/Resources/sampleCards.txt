@@ -73,13 +73,50 @@ list abilities {
 {
  condition _targetCond { and {  condition { tag BODY } distance_midrange  } }
 float _castCost 2
-function _effects { sub _target.Energy 20 }
+float delay 1
+function _effects { sub Energy 20 }
 }
   }
 
 
 
 }
+
+
+conditional CardSampleLegs Transform
+{
+string _cardName "Sample Legs"
+string _cardText "This is example Legs"
+string _cardImage "wmc"
+
+tag SLOT_LLEG
+tag SLOT_RLEG
+int slots 2
+
+tag BIOLOGICAL
+tag ATTACK_BLUNT
+
+float _castCost 5
+float _maintenanceCost 1
+float _dismissCost 50
+float _durability 100
+
+list _addedRules { }
+condition _executeCondition { true }
+list abilities {
+ conditional ab1 Ability
+{
+ condition _targetCond { and {  condition { tag DISTANCE_TICKER }  } }
+float _castCost 2
+float delay 2
+function _effects { set |-._distance <=distance }
+}
+  }
+
+
+
+}
+
 conditional SampleAbility Ability
 {
 float _castCost 10

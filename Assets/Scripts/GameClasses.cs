@@ -1299,7 +1299,31 @@ public class SingleGame
               ret=new Condition(Condition.Type.COMMAND_ARG,varname,prr,tr);
               
             }break;
-			case "isset":{
+            case "refcomp":{
+              string varname=readString(_txt,ref pos,out result);
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var1 in refcomp at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+              string var2name=readString(_txt,ref pos,out result);
+            
+              if(!result)
+              {
+                #if THING
+                Debug.LogWarning(string.Format("Cannot read var2 in refcomp   at pos: {0} ",pos));
+                #endif
+                res=false;
+                return null;
+              }
+             
+              ret=new Condition(Condition.Type.REFCOMP,varname,var2name);
+              
+            }break;
+            case "isset":{
 							string varname=readString(_txt,ref pos,out result);
 							if(!result)
 							{
@@ -3708,7 +3732,8 @@ public class SingleGame
       COMMAND_TYPE,
       COMMAND_ARG,
 			ISSET,
-      SELF
+      SELF,
+      REFCOMP
 		}
 		public bool inverse;
 		public Type type;
@@ -3798,6 +3823,20 @@ public class SingleGame
         Conditional secval=new Conditional(false);
         secval["_arg"]=lsta[nm];
         return scond.isFulfilled(secval,cnd);
+      }
+      if(type==Type.REFCOMP) //deref? ;)
+      {
+        if(variable.StartsWith(_dr))
+          variable=cnd[variable.Substring(_drl)] as string;
+        if(values.Length<1) return false;
+        string valstr=values[0] as string;
+        if(valstr==null) return false;
+        if(valstr.StartsWith(_dr))
+          valstr=cnd[valstr.Substring(_drl)] as string;
+        if(valstr==null) return false;
+        if(variable==null) return false;
+        if(cnd[variable]==cnd[valstr]) return true;
+        return false;
       }
 			/*if(variables.Length==0) return false;
 			if(variables.Length>1)
