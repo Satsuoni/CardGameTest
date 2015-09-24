@@ -552,7 +552,8 @@ function ability_cast_hand
  tag_set castEmitter FREE
  tag_remove castEmitter BUSY
  push castSource._Owner.DISCARD castSource
- execute castTarget <=castSource._effects
+ if castTarget condition { self <<.castSource._targetCond } {
+ execute castTarget <=castSource._effects }
  hook ability _
 }
 
@@ -620,8 +621,11 @@ function ability_cast_transform
  
  tag_set castEmitter FREE
  tag_remove castEmitter BUSY
- hook nya _
- execute castTarget <=castSource._effects
+
+ if castTarget condition { self <<.castSource._targetCond }
+ {
+
+execute castTarget <=castSource._effects }
 
  hook ability _
 }

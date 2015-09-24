@@ -3859,6 +3859,7 @@ public class SingleGame
        
         if(variable.StartsWith(_dr))
           variable=cnd[variable.Substring(_drl)] as string;
+
         return cnd.hasTag(variable);
       }
     

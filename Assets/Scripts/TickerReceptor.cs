@@ -60,12 +60,15 @@ public class TickerReceptor : ConditionalUIEntity, IDropHandler {
 		}
 		else
 		{
+			if(cardData!=null)
+			{
 			string dst=cardData["distance"] as string;
 			string cdst=cardData["|-._distance"] as string;
 			if(dst!=null&&cdst!=null&&dst==cdst)
 				img.color=new Color(0.5f,1.0f,1.0f);
 				else
 			img.color=new Color(1f,1.0f,1.0f);
+			}
 		}
 
 	}

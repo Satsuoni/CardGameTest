@@ -317,7 +317,7 @@ condition isDismissableByPlr
 and {
 condition { tag TRANSFORM }
 condition { tag BODY }
-
+condition { inverse tag BUSY }
 condition { strcomp _Owner.playerID <=<<._plr.playerID }
 }
 }

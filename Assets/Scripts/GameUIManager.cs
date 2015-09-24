@@ -11,6 +11,7 @@ public class GameUIManager : MonoBehaviour {
 		BODY
 	}
 	public CardControl cardPrefab;
+	public EventProgressBar eventPrefab;
 	SingleGame.GameManager _game;
 	//SingleGame
 	public RectTransform [] handSlots=new RectTransform[7];
@@ -379,6 +380,73 @@ public class GameUIManager : MonoBehaviour {
 		SingleGame.GameManager.endHook();
 	}
 	// Update is called once per frame
+	List<EventProgressBar> events=new List<EventProgressBar>();
+	RectTransform getAssociatedRect(SingleGame.Conditional ev)
+	{
+		SingleGame.Conditional src=ev["castSource"] as SingleGame.Conditional;
+		SingleGame.Conditional em=ev["castEmitter"] as SingleGame.Conditional;
+		foreach(CardReceptor cr in mpBody)
+			if(cr.cardData==src) return cr.gameObject.GetComponent<RectTransform>();
+		foreach(CardControl cr in handCards)
+			if(cr.cardData==src) return cr.gameObject.GetComponent<RectTransform>();
+		foreach(CardReceptor cr in mpBody)
+			if(cr.cardData==em) return cr.gameObject.GetComponent<RectTransform>();
+		return null;
+	}
+	void manageEvents()
+	{
+		IList evs=_game._GameData["Events"] as IList;
+		if(evs==null) return;
+		foreach(EventProgressBar e in events)
+			e.mark=false;
+		foreach(object evo in evs)
+		{
+			SingleGame.Conditional ev=evo as SingleGame.Conditional;
+			if(ev!=null)
+			{
+				int nm=-1;
+				for(int ii=0;ii<events.Count;ii++)
+				if(events[ii].cardData==ev)
+				{
+					nm=ii;
+					events[ii].mark=true;
+				}
+				if(nm==-1) 
+				{
+					GameObject go=Instantiate(eventPrefab.gameObject) as GameObject;
+					EventProgressBar pb=go.GetComponent<EventProgressBar>();
+					RectTransform tr=go.GetComponent<RectTransform>();
+					RectTransform pr= getAssociatedRect(ev);
+					if(pr!=null)
+					{
+					tr.SetParent(pr,false);
+					tr.SetInternalAnchors(new Vector4(0,0,1,1));
+						pb.cardData=ev;
+						events.Add(pb);
+						pb.mark=true;
+					}
+					else
+					{
+						Destroy(go);
+					}
+				}
+			 }
+		}
+		List<EventProgressBar> trem=new List<EventProgressBar>();
+		foreach(EventProgressBar evo in events)
+		{
+			if(!evo.mark)
+			{
+				trem.Add(evo);
+			}
+		}
+		foreach(EventProgressBar pb in trem)
+		{
+			events.Remove(pb);
+			Destroy(pb.gameObject);
+		}
+
+	}
 	void Update () {
 		if(!initDone) return;
 	if(_game.hookInProgress&&!hooks.Contains(_game.hookName))
@@ -397,5 +465,6 @@ public class GameUIManager : MonoBehaviour {
 		{
 			opponent_energy.text=Mathf.FloorToInt((float)_game._GameData["Player2.Energy"]).ToString();
 		}
+		manageEvents();
   }
 }

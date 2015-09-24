@@ -129,7 +129,7 @@ sub Energy 50
 condition _targetCond { and { condition { inverse strcomp <<._Owner.playerID <=_Owner.playerID } condition { tag BODY } distance_melee } }
 
 
-string _cardName "Sample Blunt Ability"
+string _cardName "Sample Edge Ability"
 string _cardText "This is example ability"
 string _cardImage "bakabel"
 }
