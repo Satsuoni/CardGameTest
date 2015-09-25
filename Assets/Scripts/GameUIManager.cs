@@ -497,6 +497,8 @@ public class GameUIManager : MonoBehaviour {
 
 	}
 	void Update () {
+    lock(SingleGame.gameLock)
+    {
 		if(!initDone) return;
 	if(_game.hookInProgress&&!hooks.Contains(_game.hookName))
 		{
@@ -518,5 +520,6 @@ public class GameUIManager : MonoBehaviour {
 		if(Random.value>0.993f)
 			_game._GameData["enemyPing"]="yes";
 		refreshBodies();
+    }
   }
 }

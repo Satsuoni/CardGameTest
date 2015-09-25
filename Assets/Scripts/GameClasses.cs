@@ -2849,7 +2849,7 @@ public class SingleGame
 		public static void STOP()
 		{
       self.runThread=false;
-      Monitor.PulseAll(gameLock);
+      //Monitor.PulseAll(gameLock);
 			self.gameThread.Abort();
 
 		}
