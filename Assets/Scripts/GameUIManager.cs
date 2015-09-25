@@ -477,6 +477,7 @@ public class GameUIManager : MonoBehaviour {
 					else
 					{
 						Destroy(go);
+						events.Remove(pb);
 					}
 				}
 			 }
@@ -492,11 +493,14 @@ public class GameUIManager : MonoBehaviour {
 		foreach(EventProgressBar pb in trem)
 		{
 			events.Remove(pb);
+			if(pb.gameObject!=null)
 			Destroy(pb.gameObject);
 		}
 
 	}
 	void Update () {
+	
+
     lock(SingleGame.gameLock)
     {
 		if(!initDone) return;

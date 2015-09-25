@@ -13,6 +13,14 @@ tag_set castEmitter FREE
  }
  remove |-.Events _
 } 
+function addBinding
+{
+if _ condition { inverse isset <=binding }
+{ newlist <=binding }  
+tag_set _ ACCESS_BINDING
+append <=binding _
+
+}
 conditional dismissRule
 {
 tag MAIN_RULE
@@ -30,6 +38,12 @@ function _commands
    foreach _target._addedRules
   {
   remove |-._effects _target
+  remove |-._Entities _target
+  } 
+foreach _target._bindings
+  {
+  remove <=_target.binding _target
+  remove |-._Entities _target
   } 
  accumulate isEventRelated  |-.Events remEvents
   foreach remEvents
@@ -538,7 +552,15 @@ function transform_cast
  foreach castSource._addedRules
  {
  append |-._effects _target
+ tag_set _target RULE
+ append |-._Entities _target
  }
+foreach castSource._bindings
+{
+execute _target <=|-.addBinding
+append |-._Entities _target
+}
+
  hook transformation _
 }
 
@@ -702,6 +724,17 @@ clear _used
 }
 
 
+function cleanupEntity
+{
+if _ condition { isset RULE }
+{ remove |-._effects _ }
+
+if _ condition { isset ACCESS_BINDING }
+{ remove <=binding _ }
+remove |-._Entities _
+
+}
+
 
 conditional updateTimeRule
 {
@@ -741,6 +774,20 @@ foreach _target.BODY
   mul mcost <=_Game.deltaTime
   mul mcost <=_target._maintenanceCost
   sub _target._Owner.Energy <=mcost
+  }
+ }
+}
+foreach _Game._Entities
+{
+if _target condition { isset timeout }
+ {
+ set dtime <=_Game.deltaTime
+ if _target condition { isset _Owner }
+  { mul dtime <=_target._Owner.timeflow }
+ sub _target.timeout <=dtime
+ if _target condition { le timeout 0 }
+  {
+  execute _target <=|-.cleanupEntity
   }
  }
 }

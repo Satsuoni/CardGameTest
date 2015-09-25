@@ -311,7 +311,7 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
     }
   }
 	UnityEngine.UI.RawImage img=null;
-	UnityEngine.UI.Image health=null; 
+	HealthBar health=null; 
 	// Update is called once per frame
 	public override void Update () {
 		base.Update();
@@ -341,10 +341,10 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 			if(health==null)
 			{
 				GameObject go=Instantiate(Resources.Load("healthbar") as GameObject) as GameObject;
-				health=go.GetComponent<UnityEngine.UI.Image> ();
+				health=go.GetComponent<HealthBar> ();
 				RectTransform rt=go.GetComponent<RectTransform>();
 				rt.SetParent(transform,false);
-				rt.assignRectAnchors(new Vector4(0.1f,0,0.9f,0.1f));
+				rt.assignRectAnchors(new Vector4(0.1f,0.1f,0.9f,0.2f));
 
 
 			}
@@ -354,7 +354,8 @@ public class CardReceptor : ConditionalUIEntity, IDropHandler,IBeginDragHandler,
 				{
 					float dr=System.Convert.ToSingle(data["_durability"]);
 					float cr=System.Convert.ToSingle(data["Energy"]);
-					health.fillAmount=cr/dr;
+					health.HP=cr;
+					health.maxHP=dr;
 				}
 				
 			}

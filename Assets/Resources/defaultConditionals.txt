@@ -28,6 +28,7 @@ float _maintenanceCost 0
 float _dismissCost 0
 float _durability 10
 list _addedRules { }
+list _bindings { }
 list abilities { }
 condition _executeCondition { true }
 }

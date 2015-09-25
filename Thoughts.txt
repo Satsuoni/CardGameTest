@@ -133,6 +133,8 @@ Looks like I need to add access bound effects...
 access bounds added! Like so:
 conditional cc
 {
+tag ACCESS_BINDING
+string binding |-._accessBindings._castCost
 condition _condition { true }
 function _commands
  {

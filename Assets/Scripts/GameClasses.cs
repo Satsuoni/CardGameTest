@@ -2655,7 +2655,7 @@ public class SingleGame
 		object locket=new object();
 		bool runThread=false;
 		Thread gameThread;
-		EventWaitHandle _waitHandle ;
+//		EventWaitHandle _waitHandle ;
 		static public GameManager self=null;
 
 		bool _choiceInProgress=false;
@@ -2963,7 +2963,7 @@ public class SingleGame
 			self=this;
       runThread=true;
 			gameThread=new Thread(mainGameThread);
-			_waitHandle=new AutoResetEvent(false);
+//			_waitHandle=new AutoResetEvent(false);
 			gameThread.Start();
 		}
 	}
