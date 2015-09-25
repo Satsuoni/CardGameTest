@@ -39,6 +39,7 @@ public class GameUIManager : MonoBehaviour {
 	public TickerReceptor mid;
 	public TickerReceptor far;
 	List<CardReceptor> mpBody=new List<CardReceptor>();
+	List<CardReceptor> opBody=new List<CardReceptor>();
   public Text energy;
 	public Text opponent_energy;
   SingleGame.Conditional player1;
@@ -89,6 +90,14 @@ public class GameUIManager : MonoBehaviour {
 		rhandRec.validTag="SLOT_RHAND";
 		llegRec.validTag="SLOT_LLEG";
 		rlegRec.validTag="SLOT_RLEG";
+
+		opponent_headRec.validTag="SLOT_HEAD";
+		opponent_torsoRec.validTag="SLOT_TORSO";
+		opponent_lhandRec.validTag="SLOT_LHAND";
+		opponent_rhandRec.validTag="SLOT_RHAND";
+		opponent_llegRec.validTag="SLOT_LLEG";
+		opponent_rlegRec.validTag="SLOT_RLEG";
+
 		mpBody.Add(headRec);mpBody.Add(torsoRec);mpBody.Add(lhandRec);mpBody.Add(rhandRec);
 		mpBody.Add(llegRec);mpBody.Add(rlegRec);
     headRec.refDataFromListByString("Player1.DEFAULT_BODY","slot","SLOT_HEAD");
@@ -111,6 +120,8 @@ public class GameUIManager : MonoBehaviour {
 		opponent_llegRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_LLEG");
 		
 		opponent_rlegRec.refDataFromListByString("Player2.DEFAULT_BODY","slot","SLOT_RLEG");
+		opBody.Add(opponent_headRec);opBody.Add(opponent_torsoRec);opBody.Add(opponent_lhandRec);opBody.Add(opponent_rhandRec);
+		opBody.Add(opponent_llegRec);opBody.Add(opponent_rlegRec);
     dismissArea.refDataFromString("dismiss_area");
 		melee.refDataFromString("DistanceTickerMelee");
 		mid.refDataFromString("DistanceTickerMid");
@@ -225,13 +236,36 @@ public class GameUIManager : MonoBehaviour {
     SingleGame.GameManager.endChoice(null);
   }
 //	bool postshuf=false;
+	public void refreshBodies()
+	{
+		foreach(CardReceptor cr in mpBody)
+		{
+			cr.cardData=null;
+			cr.refDataFromListByString("Player1.BODY","slot",cr.validTag);
+			if(cr.cardData==null)
+				cr.refDataFromListByTag("Player1.BODY",cr.validTag);
+			//        Debug.Log(cr.cardData["slot"]);
+		}
+		foreach(CardReceptor cr in opBody)
+		{
+			cr.cardData=null;
+			cr.refDataFromListByString("Player2.BODY","slot",cr.validTag);
+			if(cr.cardData==null)
+				cr.refDataFromListByTag("Player2.BODY",cr.validTag);
+//			Debug.Log(cr.cardData["_cardName"]);
+			//        Debug.Log(cr.cardData["slot"]);
+		}
+	}
  IEnumerator trans()
 	{
 		Debug.Log("trans");
 		SingleGame.Conditional castCard=_game.hookData["castSource"] as SingleGame.Conditional;
+
 		//SingleGame.Conditional targetCard=_game.hookData["castTarget"] as SingleGame.Conditional;
 	    if(castCard!=null)
 		{
+			if(castCard["_Owner"]!=player1) {hooks.Remove("transformation");
+				SingleGame.GameManager.endHook();  yield break;}
 			int handnum=-1;
 			for(int i=0;i<handCards.Count;i++)
 			{
@@ -321,14 +355,7 @@ public class GameUIManager : MonoBehaviour {
     if(name=="discard")
     {
       Debug.Log("discarded");
-      foreach(CardReceptor cr in mpBody)
-      {
-        cr.cardData=null;
-        cr.refDataFromListByString("Player1.BODY","slot",cr.validTag);
-        if(cr.cardData==null)
-          cr.refDataFromListByTag("Player1.BODY",cr.validTag);
-//        Debug.Log(cr.cardData["slot"]);
-      }
+			refreshBodies();
 
 
       hooks.Remove(name);
@@ -338,12 +365,30 @@ public class GameUIManager : MonoBehaviour {
 		if(name=="test")
 		{
 			Debug.Log("testlog");
-//      Debug.Log(data["slot"]);
+			Debug.Log(data["active.abilities"]);
+			Debug.Log(data["active._cardName"]);
+			Debug.Log(((IList)data["_sel"]).Count);
+		//	Debug.Log(data["_ability"]);
+			//Debug.Log(((SingleGame.Conditional)data["_target.TARGETED"]).hasTag("DISTANCE_TICKER"));
+			//Debug.Log(((IList)data["_used"]).Count);
      // Debug.Log(data["_Owner.BODY"]);
 			//Debug.Log(data.hasTag(player1["activeTag"] as string));
 			//IList dl=data["_used"] as IList;
 		//	Debug.Log(dl.Count);
 			hooks.Remove("test");
+			SingleGame.GameManager.endHook();
+			return;
+		}
+		if(name=="act")
+		{
+			SingleGame.Conditional cnd=data["TARGETED"] as SingleGame.Conditional;
+			string st2=data["TARGETED._cardName"] as string;
+			if(st2==null)
+				st2=data["TARGETED.slot"] as string;
+			if(cnd.hasTag("DISTANCE_TICKER")) st2="MOVE";
+			Debug.Log(string.Format("Enemy acted randomly: {0} {1} {2}",data["SELECTED._cardName"],st2,data["AIMED._cardName"]));
+		
+			hooks.Remove(name);
 			SingleGame.GameManager.endHook();
 			return;
 		}
@@ -399,8 +444,12 @@ public class GameUIManager : MonoBehaviour {
 		if(evs==null) return;
 		foreach(EventProgressBar e in events)
 			e.mark=false;
-		foreach(object evo in evs)
+		int ic=0;
+		while(ic<evs.Count)
 		{
+
+			object evo=evs[ic];
+			ic++;
 			SingleGame.Conditional ev=evo as SingleGame.Conditional;
 			if(ev!=null)
 			{
@@ -466,5 +515,8 @@ public class GameUIManager : MonoBehaviour {
 			opponent_energy.text=Mathf.FloorToInt((float)_game._GameData["Player2.Energy"]).ToString();
 		}
 		manageEvents();
+		if(Random.value>0.993f)
+			_game._GameData["enemyPing"]="yes";
+		refreshBodies();
   }
 }

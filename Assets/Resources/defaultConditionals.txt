@@ -29,6 +29,7 @@ float _dismissCost 0
 float _durability 10
 list _addedRules { }
 list abilities { }
+condition _executeCondition { true }
 }
 
 conditional defaultBodypart

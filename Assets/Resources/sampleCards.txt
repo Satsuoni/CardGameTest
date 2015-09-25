@@ -31,7 +31,7 @@ tag EXECUTE_POSTFIX
  function _commands 
  {
 
- return add castSource._Owner.Energy 1000
+ return add castSource._Owner.Energy 10
  }
 }
  }
@@ -99,12 +99,12 @@ tag ATTACK_BLUNT
 float _castCost 5
 float _maintenanceCost 1
 float _dismissCost 50
-float _durability 100
+float _durability 25
 
 list _addedRules { }
 condition _executeCondition { true }
 list abilities {
- conditional ab1 Ability
+ conditional move Ability
 {
  condition _targetCond { and {  condition { tag DISTANCE_TICKER }  } }
 float _castCost 2

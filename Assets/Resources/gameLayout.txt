@@ -27,6 +27,7 @@ updateTimeRule
 defaultBodyDamagePropagationRule
 detargetRule
 gameOverRule
+randomEnemyAction
 }
 
 

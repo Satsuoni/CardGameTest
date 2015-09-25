@@ -256,7 +256,13 @@ public class SingleGame
 					if(_values.TryGetValue(ln[0], out ret))
 					{
 						Conditional nxt=ret as Conditional;
+						if(nxt!=null)
 						return nxt[name.Substring(ln[0].Length+1)];//hopefully...
+						else
+						{
+							Debug.Log(string.Format("invalid name chain: {0}",name));
+							return null;
+						}
 					} else
 						return null;
 				}
@@ -2744,10 +2750,11 @@ public class SingleGame
 						if(cnd.isFulfilled(stack,stack[_Game] as Conditional))
 						{
 							//Debug.Log(cnd);
+								lock(gameLock)
+								{
 							Operation op=new Operation(Operation.Commands.NEW);
 							Conditional nstack=op.createStack(stack, eff);
-              //Debug.Log(string.Format("nstack effects : {0}",(nstack[_effects] as IList).Count));
-                int oneff=rulesAndEffects.Count;
+              int oneff=rulesAndEffects.Count;
               op.executeList(eff[_commands], nstack);
                 if(rulesAndEffects.Count!=oneff)
                 {
@@ -2759,6 +2766,7 @@ public class SingleGame
 								Debug.Log("GameObject Overlapped");
 								return;//gameover? I guess
 							}
+								}
 						}
 
 						//Monitor.Exit(gameLock);
@@ -2799,7 +2807,8 @@ public class SingleGame
 				self._choiceList=objects;
 				self._choiceName=chname;
 			}
-			self._waitHandle.WaitOne();
+      Monitor.Wait(gameLock);
+			//self._waitHandle.WaitOne();
 			Conditional ret=null;
 			lock(self.locket)
 			{
@@ -2811,6 +2820,8 @@ public class SingleGame
 		}
 		public static void endChoice(Conditional retValue)
 		{
+      lock(gameLock)
+      {
 			if(self==null||Thread.CurrentThread==self.gameThread)
 			{
 				#if THING
@@ -2831,11 +2842,14 @@ public class SingleGame
 				self._choiceName=null;
 				self.chosen=retValue;
 			}
-			self._waitHandle.Set();
+      Monitor.Pulse(gameLock);
+      }
+			//self._waitHandle.Set();
 		}
 		public static void STOP()
 		{
       self.runThread=false;
+      Monitor.PulseAll(gameLock);
 			self.gameThread.Abort();
 
 		}
@@ -2861,8 +2875,8 @@ public class SingleGame
 				self._hookData=hookData;
 				self._hookName=hName;
 			}
-			self._waitHandle.WaitOne();
-
+			//self._waitHandle.WaitOne();
+      Monitor.Wait(gameLock);
 			lock(self.locket)
 			{
 				self._hookInProgress=false;
@@ -2872,6 +2886,8 @@ public class SingleGame
 		}
 		public static void endHook()
 		{
+      lock(gameLock)
+      {
 			if(self==null||Thread.CurrentThread==self.gameThread)
 			{
 				#if THING
@@ -2886,7 +2902,9 @@ public class SingleGame
 				#endif
 				return;
 			}
-			self._waitHandle.Set();
+			//self._waitHandle.Set();
+      Monitor.PulseAll(gameLock);
+    }
 		}
 		public void fillGameData()
 		{
@@ -3197,7 +3215,7 @@ public class SingleGame
           }
           else
           {
-						Debug.Log(string.Format("Invalid list : {0} {1} {2} {3} ",this["arg0"],cndi,this["arg1"],lst));
+						Debug.Log(string.Format("Invalid list : {0} {1} {2} {3} Var:  {4}  Val: {5} ",this["arg0"],cndi,this["arg1"],lst,vl,cndi[vl]));
           }
           if(this["arg1"]is string&&(this["arg1"] as string).StartsWith(_dr))
           {
