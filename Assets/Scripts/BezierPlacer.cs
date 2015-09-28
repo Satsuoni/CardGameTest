@@ -78,13 +78,18 @@ public class BezierPlacer : MonoBehaviour {
 			cb=0;
 		}
 //		Debug.Log(ca);
-		//Debug.Log(cb);
+	//	Debug.Log(cb);
 		float mll=Mathf.Pow(ca*ca+cb*cb,1.0f/6.0f);
 		float len=Mathf.Sqrt(ca*ca+cb*cb);
 		float sq3=Mathf.Sqrt(3.0f)/2;
 		ca/=len;
 		cb/=len;
+    bool sgn=(ca<0);
+    float bkk=ca*mll;
 		cuberoot(ref ca,ref cb);
+  //  Debug.Log(ca);
+ //   Debug.Log(cb);
+
 		float w0r=ca*mll;
 		float w1r=(-ca/2+sq3*cb)*mll;
 		float w2r=(-ca/2-sq3*cb)*mll;
@@ -114,7 +119,9 @@ public class BezierPlacer : MonoBehaviour {
 		else //should be 1 root XD
 		{
 			ret=new float[1];
+      if(!sgn)
 			ret[0]=w0r*(1+invml)+dx;
+      else ret[0]=bkk*(1+invml)+dx;
 
 		}
 		return ret;
@@ -128,16 +135,28 @@ public class BezierPlacer : MonoBehaviour {
 		float minc=10;
 		Vector4 dv=new Vector4(0,0,0,1);
 		float [] solp=getZeros(curve-dv*(x0+d));
+//    Debug.Log("plus");
 		for(int i=0;i<solp.Length;i++)
 		{
 			if(solp[i]>t0&&solp[i]-t0<minc) minc=solp[i]-t0;
-			Debug.LogFormat("sol: {0} {1}",solp[i],CCurve(curve,solp[i])-x0);
+     /* if(Mathf.Abs(CCurve(curve-dv*(x0+d),solp[i]))>eps)
+        {
+        Debug.Log(curve-dv*(x0+d));
+      Debug.LogFormat("sol: {0} {1}",solp[i],CCurve(curve-dv*(x0+d),solp[i]));
+      }*/
 		}
 		solp=getZeros(curve-dv*(x0-d));
+  //  Debug.Log("minus");
 		for(int i=0;i<solp.Length;i++)
 		{
 			if(solp[i]>t0&&solp[i]-t0<minc) minc=solp[i]-t0;
-			Debug.LogFormat("sol: {0} {1}",solp[i],CCurve(curve,solp[i])-x0);
+     /* if(Mathf.Abs(CCurve(curve-dv*(x0-d),solp[i]))>eps)
+      {
+        Debug.Log(curve-dv*(x0-d));
+        Debug.Log ((x0-d));
+        Debug.LogFormat("sol: {0} {1}",solp[i],CCurve(curve-dv*(x0-d),solp[i]));
+      }*/
+     
 		}
 		if(minc<9)
 			return t0+minc;
@@ -186,23 +205,31 @@ public class BezierPlacer : MonoBehaviour {
 			mx=Mathf.Max(CCurve(curve,s2),mx);
 		return mx;
 	}
+  float mnpos(float f1,float f2)
+  {
+    if(Mathf.Min(f1,f2)<0)
+      return Mathf.Max(f1,f2);
+    return Mathf.Min(f1,f2);
+  }
 	float remgap(float szx,float szy)
 	{
 		float cp=0;
+    Debug.Log(szx);
+    Debug.Log(numSpawn);
 		for(int i=0;i<numSpawn;i++)
 		{
 			//center
-			//float dp=Mathf.Min(getClosestParameter(xvars,cp,szx/2),getClosestParameter(yvars,cp,szy/2));
-			float dp=Mathf.Min(getClosestParameter(yvars,cp,szy/2),100);
+      float dp=mnpos(getClosestParameter(xvars,cp,szx/2),getClosestParameter(yvars,cp,szy/2));
+//			float dp=Mathf.Min(getClosestParameter(yvars,cp,szy/2),100);
 			cp=dp;
 			if(cp>1) return -1;
 			if(cp<0) return -1;
 			//out
 			Debug.Log(i);
 			Debug.Log(dp);
-			Debug.LogFormat("cyy: {0}",CCurve(yvars,cp));
-			//dp=Mathf.Min(getClosestParameter(xvars,cp,szx/2),getClosestParameter(yvars,cp,szy/2));
-			dp=Mathf.Min(getClosestParameter(yvars,cp,szy/2),100);
+		//	Debug.LogFormat("cyy: {0}",CCurve(yvars,cp));
+      dp=mnpos(getClosestParameter(xvars,cp,szx/2),getClosestParameter(yvars,cp,szy/2));
+		//	dp=Mathf.Min(getClosestParameter(yvars,cp,szy/2),100);
 			cp=dp;
 			;
 			if(cp>1) return -1;
@@ -229,9 +256,9 @@ public class BezierPlacer : MonoBehaviour {
 		a3b2=pos1.w-pos0.w;
 		yvars.x=a3b2-2*ab;
 		yvars.y=ab-yvars.x;
-		Debug.Log(pos0);
-		Debug.Log(pos1);
-		Debug.LogFormat("{0} {1} {2} {3} ",CCurve(xvars,0),CCurve(yvars,0),CCurve(xvars,1),CCurve(yvars,1));
+		//Debug.Log(pos0);
+     //		Debug.Log(pos1);
+		//Debug.LogFormat("{0} {1} {2} {3} ",CCurve(xvars,0),CCurve(yvars,0),CCurve(xvars,1),CCurve(yvars,1));
 		float bdx=maxval(xvars)-minval(xvars);
 		float bdy=maxval(yvars)-minval(yvars);
 		float minsz=1;//Mathf.Min(bdx,bdy/aspect)/numSpawn;
@@ -243,7 +270,7 @@ public class BezierPlacer : MonoBehaviour {
 		float ma=remgap(minsz,minsz/aspect);
 		float mb=remgap(maxsz,maxsz/aspect);
 		float mm=remgap(mp,mp/aspect);
-			Debug.LogFormat("minsz: {0} ma : {1}",minsz,ma);
+		//	Debug.LogFormat("minsz: {0} ma : {1}",minsz,ma);
 		if(ma<0)
 		{
 			Debug.LogError("Doesn't fit for some reason");
@@ -271,20 +298,20 @@ public class BezierPlacer : MonoBehaviour {
 		{
 			//center
 			float cx=CCurve(xvars,cp),cy=CCurve(yvars,cp);
-			//float dp=Mathf.Min(getClosestParameter(xvars,cp,minsz/2),100);//getClosestParameter(yvars,cp,minsz/(2*aspect)));
-			float dp=Mathf.Min(getClosestParameter(yvars,cp,minsz/(2*aspect)),100);//getClosestParameter(yvars,cp,minsz/(2*aspect)));
+      float dp=mnpos(getClosestParameter(xvars,cp,minsz/2),getClosestParameter(yvars,cp,minsz/(2*aspect)));
+			//float dp=Mathf.Min(getClosestParameter(yvars,cp,minsz/(2*aspect)),100);//getClosestParameter(yvars,cp,minsz/(2*aspect)));
 			cp=dp;
 
-			Debug.LogFormat("dx: {0} dy: {1} ",CCurve(xvars,cp)-cx,CCurve(yvars,cp)-cy);
+		//	Debug.LogFormat("dx: {0} dy: {1} ",CCurve(xvars,cp)-cx,CCurve(yvars,cp)-cy);
 			cx=CCurve(xvars,cp);
 			cy=CCurve(yvars,cp);
-			Debug.LogFormat("cx :{0} cy: {1}, cp: {2}",cx,cy,cp);
+			//Debug.LogFormat("cx :{0} cy: {1}, cp: {2}",cx,cy,cp);
 			spawned[i].assignRectAnchors(self.getAnchorsFromCanvasRect(new Rect(cx-minsz/2,cy-minsz/(2*aspect),minsz,minsz/aspect)));
 			//out
-			//dp=Mathf.Min(getClosestParameter(xvars,cp,minsz/2),100);//getClosestParameter(yvars,cp,minsz/(2*aspect)));
-			dp=Mathf.Min(getClosestParameter(yvars,cp,minsz/(2*aspect)),100);
+      dp=mnpos(getClosestParameter(xvars,cp,minsz/2),getClosestParameter(yvars,cp,minsz/(2*aspect)));
+			//dp=Mathf.Min(getClosestParameter(yvars,cp,minsz/(2*aspect)),100);
 			cp=dp;
-			Debug.LogFormat("2: dx: {0} dy: {1} ",CCurve(xvars,cp)-cx,CCurve(yvars,cp)-cy);
+			//Debug.LogFormat("2: dx: {0} dy: {1} ",CCurve(xvars,cp)-cx,CCurve(yvars,cp)-cy);
 		}
 	}
 	void Start () {
@@ -298,9 +325,13 @@ public class BezierPlacer : MonoBehaviour {
 			spawned[i]=tr;
 		}
 		Rerender();
-		float [] sols=getZeros(new Vector4(1,-3,-144,432));
-		Debug.Log("soluitons");
-		foreach(float s in sols) Debug.Log(s);
+    Vector4 nv=new Vector4(2221.0f, -2831.5f, 0.0f, 1109.4f);
+    float [] sols=getZeros(nv);
+		Debug.Log("solutions");
+
+		foreach(float s in sols)
+    {Debug.LogFormat("{0} : {1}",s,CCurve(nv,s));
+    }
 	}
 
 	// Update is called once per frame
