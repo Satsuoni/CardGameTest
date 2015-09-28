@@ -146,7 +146,14 @@ conditional _accessBindings
 list _castCost
  { cc }
 }
-addding dereference to first parameters of lists
+adding dereference to first parameters of lists
+
+ATTACK_BEAM
+ATTACK_EDGE
+ATTACK_BLUNT
+ATTACK_AURA
+ATTACK_PROJECTILE
+
 
 
 

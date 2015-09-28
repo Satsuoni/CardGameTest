@@ -492,9 +492,10 @@ public class GameUIManager : MonoBehaviour {
 		}
 		foreach(EventProgressBar pb in trem)
 		{
+			if(pb!=null&&pb.gameObject!=null)
+				Destroy(pb.gameObject);
 			events.Remove(pb);
-			if(pb.gameObject!=null)
-			Destroy(pb.gameObject);
+
 		}
 
 	}
