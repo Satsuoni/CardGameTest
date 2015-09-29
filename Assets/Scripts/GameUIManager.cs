@@ -14,7 +14,9 @@ public class GameUIManager : MonoBehaviour {
 	public EventProgressBar eventPrefab;
 	SingleGame.GameManager _game;
 	//SingleGame
-	public RectTransform [] handSlots=new RectTransform[7];
+	//public
+	public BezierPlacer handplacer;
+		RectTransform [] handSlots=new RectTransform[7];
 	public RectTransform deck;
 	public RectTransform flipper;
 	public GameObject card;
@@ -84,6 +86,10 @@ public class GameUIManager : MonoBehaviour {
     {
       yield return null;
     }
+		for(int i=0;i<7;i++)
+			handSlots[i]=handplacer.slots[i+1];
+		deck=handplacer.slots[0];
+		flipper=deck;
 		headRec.validTag="SLOT_HEAD";
 		torsoRec.validTag="SLOT_TORSO";
 		lhandRec.validTag="SLOT_LHAND";
