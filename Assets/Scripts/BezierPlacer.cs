@@ -403,7 +403,7 @@ public class BezierPlacer : MonoBehaviour {
 		}
 		Rerender();
 		//Vector4 nv=new Vector4(-2.9f, 1687.5f, -3366.4f, -1.4f);
-		Vector4 nv=new Vector4(-623.0f, 1958.0f, -2047.0f, -311.5f);
+//		Vector4 nv=new Vector4(-623.0f, 1958.0f, -2047.0f, -311.5f);
 
 
 
